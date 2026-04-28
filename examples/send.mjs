@@ -28,7 +28,7 @@ const client = PushPlusClient.builder()
 
 try {
   // 最简：发送一条消息
-  const code1 = await client.sendSimple('Hello', 'from perk-pushplus-sdk (js)');
+  const code1 = await client.sendSimple('Hello', 'from @perk-net/perk-pushplus-sdk (js)');
   console.log('sendSimple shortCode =', code1);
 
   // 使用 Builder 发送 markdown 消息

@@ -1,4 +1,4 @@
-# perk-pushplus-sdk
+# @perk-net/perk-pushplus-sdk
 
 [pushplus(推送加)](https://www.pushplus.plus) 官方接口的 **JavaScript / TypeScript SDK**，覆盖 **消息接口** 与 **全部开放接口**。
 
@@ -17,17 +17,17 @@
 ## 安装
 
 ```bash
-npm install perk-pushplus-sdk
+npm install @perk-net/perk-pushplus-sdk
 # 或
-pnpm add perk-pushplus-sdk
+pnpm add @perk-net/perk-pushplus-sdk
 # 或
-yarn add perk-pushplus-sdk
+yarn add @perk-net/perk-pushplus-sdk
 ```
 
 浏览器直接通过 CDN 引入：
 
 ```html
-<script src="https://unpkg.com/perk-pushplus-sdk/dist/index.global.js"></script>
+<script src="https://unpkg.com/@perk-net/perk-pushplus-sdk/dist/index.global.js"></script>
 <script>
   // 全局变量名 PerkPushPlus
   const client = new PerkPushPlus.PushPlusClient({ token: 'your_user_token' });
@@ -35,12 +35,15 @@ yarn add perk-pushplus-sdk
 </script>
 ```
 
+> **作用域包**：本包在 npm 上为组织 **`@perk-net`** 下的公开包。安装与导入时请始终带上作用域前缀（见上文命令）。  
+> **维护者发布**：请使用具备 **`@perk-net` 组织发布权限** 的账号，并满足 npm 要求（如已开启账号 **2FA**，或使用可绕过写入 2FA 的 **Granular Access Token**）。仓库内已设置 `publishConfig.access: "public"`，首次发布通常无需再手动加 `--access public`。
+
 ## 快速开始
 
 ### 1. 构建客户端
 
 ```ts
-import { PushPlusClient } from 'perk-pushplus-sdk';
+import { PushPlusClient } from '@perk-net/perk-pushplus-sdk';
 
 const client = new PushPlusClient({
   token: 'your_user_token',     // 个人中心 -> 一对一推送
@@ -59,7 +62,7 @@ const client2 = PushPlusClient.builder()
 ### 2. 发送消息
 
 ```ts
-import { Channel, Template, sendRequest } from 'perk-pushplus-sdk';
+import { Channel, Template, sendRequest } from '@perk-net/perk-pushplus-sdk';
 
 // 最简：默认 wechat / html
 const shortCode = await client.sendSimple('标题', '<b>内容</b>');
@@ -87,7 +90,7 @@ await client.send({
 ### 3. 多渠道发送
 
 ```ts
-import { Channel, batchSendRequest } from 'perk-pushplus-sdk';
+import { Channel, batchSendRequest } from '@perk-net/perk-pushplus-sdk';
 
 const results = await client.batchSend(
   batchSendRequest()
@@ -140,7 +143,7 @@ const myQr = await client.friend.getQrCode({ content: 'welcome' });
 const friends = await client.friend.list({ current: 1, pageSize: 20 });
 
 // webhook 渠道
-import { WebhookType } from 'perk-pushplus-sdk';
+import { WebhookType } from '@perk-net/perk-pushplus-sdk';
 await client.webhook.add({
   webhookCode: 'bark',
   webhookName: '我的 Bark',
@@ -167,7 +170,7 @@ const out = await client.pre.test({ content: '...', message: 'hi' });
 PushPlus 在消息发送完成、群组新增用户、新增好友时会回调你预置的 URL。SDK 提供类型安全的解析：
 
 ```ts
-import { CallbackEvent, parseCallback } from 'perk-pushplus-sdk';
+import { CallbackEvent, parseCallback } from '@perk-net/perk-pushplus-sdk';
 
 // Express
 app.post('/pushplus/callback', express.json(), (req, res) => {
@@ -218,7 +221,7 @@ new PushPlusClient({
 | `logRequest` | `false` | 开启 DEBUG 级请求/响应日志（写到 `console.debug`） |
 | `rateLimitGuardEnabled` | `true` | 是否启用本地限流守卫 |
 | `rateLimitCooldownMs` | `0` | 命中 `code=900` 后的本地禁推时长（毫秒）；`0` 表示到「次日 0 点」 |
-| `userAgent` | `perk-pushplus-sdk-js/<v>` | UA 头（仅 Node.js 生效，浏览器禁止设置） |
+| `userAgent` | `@perk-net/perk-pushplus-sdk/<v>` | UA 头（仅 Node.js 生效，浏览器禁止设置） |
 | `httpRequester` | 内置 fetch 实现 | 自定义 HTTP 客户端 |
 
 ## 错误处理
@@ -226,7 +229,7 @@ new PushPlusClient({
 所有错误都会包装成 `PushPlusError`：
 
 ```ts
-import { ErrorCode, PushPlusError } from 'perk-pushplus-sdk';
+import { ErrorCode, PushPlusError } from '@perk-net/perk-pushplus-sdk';
 
 try {
   await client.sendSimple('t', 'c');
@@ -284,7 +287,7 @@ new PushPlusClient({ token: 'xxx', rateLimitGuardEnabled: false });
 `fetch` 不满足需求（如想用 axios / undici / got / 浏览器代理）时，实现 `HttpRequester` 接口即可：
 
 ```ts
-import { HttpRequester, HttpResponse, PushPlusClient } from 'perk-pushplus-sdk';
+import { HttpRequester, HttpResponse, PushPlusClient } from '@perk-net/perk-pushplus-sdk';
 import axios from 'axios';
 
 class AxiosHttpRequester implements HttpRequester {

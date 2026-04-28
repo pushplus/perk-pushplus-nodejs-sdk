@@ -2,7 +2,7 @@
 <html lang="zh-CN">
   <head>
     <meta charset="UTF-8" />
-    <title>perk-pushplus-sdk · 浏览器示例</title>
+    <title>@perk-net/perk-pushplus-sdk · 浏览器示例</title>
     <meta name="viewport" content="width=device-width,initial-scale=1.0" />
     <style>
       body { font-family: -apple-system, BlinkMacSystemFont, 'PingFang SC', sans-serif; padding: 24px; max-width: 720px; margin: 0 auto; }
@@ -16,7 +16,7 @@
     </style>
   </head>
   <body>
-    <h1>perk-pushplus-sdk · 浏览器示例</h1>
+    <h1>@perk-net/perk-pushplus-sdk · 浏览器示例</h1>
     <p>本示例直接通过 <code>&lt;script&gt;</code> 标签加载 SDK，全局变量名为 <code>PerkPushPlus</code>。</p>
     <p>⚠️ <b>跨域提醒</b>：PushPlus 的 CORS 策略由其服务端决定。如果浏览器直接调用被拦截，请通过你自己的后端代理后再使用本 SDK。</p>
 
@@ -35,7 +35,7 @@
     <pre id="output">尚未发送</pre>
 
     <!-- 发布后改用 unpkg / jsdelivr -->
-    <!-- <script src="https://unpkg.com/perk-pushplus-sdk/dist/index.global.js"></script> -->
+    <!-- <script src="https://unpkg.com/@perk-net/perk-pushplus-sdk/dist/index.global.js"></script> -->
     <script src="../dist/index.global.js"></script>
     <script>
       const { PushPlusClient, Template, PushPlusError } = PerkPushPlus;

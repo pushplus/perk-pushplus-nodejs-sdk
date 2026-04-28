@@ -30,7 +30,7 @@ export interface PushPlusClientOptions extends PushPlusConfig {
  *
  * @example 快速开始
  * ```ts
- * import { PushPlusClient } from 'perk-pushplus-sdk';
+ * import { PushPlusClient } from '@perk-net/perk-pushplus-sdk';
  *
  * const client = new PushPlusClient({
  *   token: 'your_user_token',

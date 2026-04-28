@@ -87,6 +87,6 @@ export function resolveConfig(input: PushPlusConfig | undefined | null): Resolve
     logRequest: cfg.logRequest ?? false,
     rateLimitGuardEnabled: cfg.rateLimitGuardEnabled ?? true,
     rateLimitCooldownMs: cfg.rateLimitCooldownMs ?? 0,
-    userAgent: cfg.userAgent ?? `perk-pushplus-sdk-js/1.0.0`,
+    userAgent: cfg.userAgent ?? `@perk-net/perk-pushplus-sdk/1.0.0`,
   };
 }

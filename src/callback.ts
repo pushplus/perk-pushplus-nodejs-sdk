@@ -8,7 +8,7 @@ import { CallbackPayload } from './models';
  *
  * @example
  * ```ts
- * import { parseCallback, CallbackEvent } from 'perk-pushplus-sdk';
+ * import { parseCallback, CallbackEvent } from '@perk-net/perk-pushplus-sdk';
  *
  * function onPushPlusCallback(rawBody: string) {
  *   const payload = parseCallback(rawBody);

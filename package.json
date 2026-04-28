@@ -1,5 +1,5 @@
 {
-  "name": "perk-pushplus-sdk",
+  "name": "@perk-net/perk-pushplus-sdk",
   "version": "1.0.0",
   "description": "pushplus(推送加) 官方接口 JavaScript/TypeScript SDK，可在 Node.js 与浏览器中使用",
   "keywords": [
@@ -48,6 +48,10 @@
     "node": ">=14"
   },
   "sideEffects": false,
+  "publishConfig": {
+    "access": "public",
+    "registry": "https://registry.npmjs.org/"
+  },
   "scripts": {
     "build": "tsup",
     "dev": "tsup --watch",
