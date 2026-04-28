@@ -1,0 +1,11 @@
+node_modules
+test
+examples
+*.log
+.DS_Store
+.idea
+.vscode
+coverage
+*.tsbuildinfo
+tsup.config.ts
+tsconfig.json

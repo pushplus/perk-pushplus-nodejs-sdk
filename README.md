@@ -1,0 +1,331 @@
+# perk-pushplus-sdk
+
+[pushplus(推送加)](https://www.pushplus.plus) 官方接口的 **JavaScript / TypeScript SDK**，覆盖 **消息接口** 与 **全部开放接口**。
+
+- **同时支持 Node.js 与浏览器**：Node.js 18+ 使用内置 `fetch`，浏览器使用原生 `fetch`，无运行时依赖。
+- **三种产物**：CommonJS (`.cjs`) + ESModule (`.js`) + 浏览器 IIFE (`.global.js`)，可通过 npm / `<script>` 直接加载。
+- **完整 TypeScript 类型**：所有请求 / 响应 / 枚举 / 回调全部带类型声明。
+- **AccessKey 自动管理**：缓存 + 过期前自动刷新；`code=401` 自动刷新并重试一次。
+- **本地限流守卫**：命中 `code=900` 后按 token 短路同 token 后续发送，避免被服务端长期封禁。
+- **Builder 链式 API**：与 Java/Python SDK 风格保持一致。
+- **回调解析**：`message_complate` / `add_topic_user` / `add_friend` 三类回调统一类型化解析。
+
+> 接口文档：
+> - 消息接口：<https://www.pushplus.plus/doc/guide/api.html>
+> - 开放接口：<https://www.pushplus.plus/doc/guide/openApi.html>
+
+## 安装
+
+```bash
+npm install perk-pushplus-sdk
+# 或
+pnpm add perk-pushplus-sdk
+# 或
+yarn add perk-pushplus-sdk
+```
+
+浏览器直接通过 CDN 引入：
+
+```html
+<script src="https://unpkg.com/perk-pushplus-sdk/dist/index.global.js"></script>
+<script>
+  // 全局变量名 PerkPushPlus
+  const client = new PerkPushPlus.PushPlusClient({ token: 'your_user_token' });
+  client.sendSimple('标题', 'Hello PushPlus').then(console.log);
+</script>
+```
+
+## 快速开始
+
+### 1. 构建客户端
+
+```ts
+import { PushPlusClient } from 'perk-pushplus-sdk';
+
+const client = new PushPlusClient({
+  token: 'your_user_token',     // 个人中心 -> 一对一推送
+  secretKey: 'your_secret_key', // 个人中心 -> 开发设置（开放接口必填）
+});
+
+// 也支持 Builder 风格
+const client2 = PushPlusClient.builder()
+  .token('your_user_token')
+  .secretKey('your_secret_key')
+  .build();
+```
+
+> `PushPlusClient` 无状态，建议作为单例长期持有。
+
+### 2. 发送消息
+
+```ts
+import { Channel, Template, sendRequest } from 'perk-pushplus-sdk';
+
+// 最简：默认 wechat / html
+const shortCode = await client.sendSimple('标题', '<b>内容</b>');
+
+// 完整：使用 Builder
+const code = await client.send(
+  sendRequest()
+    .title('CPU 告警')
+    .content('# CPU > 90%\n请尽快处理')
+    .template(Template.MARKDOWN)
+    .channel(Channel.WECHAT)
+    .topic('ops')
+    .callbackUrl('https://your.host/pushplus/callback')
+    .build(),
+);
+
+// 也可以直接传普通对象
+await client.send({
+  title: '部署完成',
+  content: 'v1.0.0',
+  template: Template.MARKDOWN,
+});
+```
+
+### 3. 多渠道发送
+
+```ts
+import { Channel, batchSendRequest } from 'perk-pushplus-sdk';
+
+const results = await client.batchSend(
+  batchSendRequest()
+    .title('多渠道告警')
+    .content('CPU > 90%')
+    .channel(Channel.WECHAT).option('')
+    .channel(Channel.WEBHOOK).option('bark')
+    .channel(Channel.EXTENSION).option('')
+    .build(),
+);
+
+for (const r of results) {
+  console.log(r.channel, r.shortCode, r.code, r.message);
+}
+```
+
+`channel(...)` 与 `option(...)` 可累计调用，SDK 自动用逗号拼接，与官方文档示例语义一致。
+
+### 4. 开放接口（全量）
+
+> 需要在 PushPlus 后台「开发设置」中：开启开放接口、配置 `secretKey`、把调用方所在公网 IP 加入安全 IP 列表。
+> AccessKey 完全自动管理 —— 直接调用就好。
+
+```ts
+// 用户
+const me = await client.user.myInfo();
+const limit = await client.user.getLimitTime();
+const count = await client.user.getSendCount();
+
+// 消息
+const page = await client.openMessage.list({ current: 1, pageSize: 20 });
+const result = await client.openMessage.queryResult('short-code');
+const url = client.openMessage.detailUrl('short-code');
+
+// 消息 token
+const newToken = await client.messageToken.add({ name: 'for-jenkins' });
+
+// 群组
+const topics = await client.topic.list({
+  current: 1, pageSize: 20, params: { topicType: 0 },
+});
+const detail = await client.topic.detail(123);
+const qr = await client.topic.qrCode(123, 86400, -1);
+
+// 群组用户
+await client.topicUser.editRemark(456, '老张');
+
+// 好友
+const myQr = await client.friend.getQrCode({ content: 'welcome' });
+const friends = await client.friend.list({ current: 1, pageSize: 20 });
+
+// webhook 渠道
+import { WebhookType } from 'perk-pushplus-sdk';
+await client.webhook.add({
+  webhookCode: 'bark',
+  webhookName: '我的 Bark',
+  webhookType: WebhookType.BARK,
+  webhookUrl: 'https://api.day.app/xxxx',
+});
+
+// 渠道（公众号 / 企业微信 / 邮箱）
+const mps = await client.channel.mpList();
+
+// ClawBot
+const botQr = await client.clawBot.getBotQrcode();
+
+// 设置
+await client.setting.changeIsSend(1); // 启用发送
+await client.setting.changeOpenMessageType(0);
+
+// 预处理（仅会员）
+const out = await client.pre.test({ content: '...', message: 'hi' });
+```
+
+### 5. 回调解析
+
+PushPlus 在消息发送完成、群组新增用户、新增好友时会回调你预置的 URL。SDK 提供类型安全的解析：
+
+```ts
+import { CallbackEvent, parseCallback } from 'perk-pushplus-sdk';
+
+// Express
+app.post('/pushplus/callback', express.json(), (req, res) => {
+  const payload = parseCallback(req.body);
+  switch (payload.event) {
+    case CallbackEvent.MESSAGE_COMPLETE:
+      console.log('发送结果', payload.messageInfo?.shortCode, payload.messageInfo?.sendStatus);
+      break;
+    case CallbackEvent.ADD_TOPIC_USER:
+      console.log('新订阅', payload.topicUserInfo?.openId);
+      break;
+    case CallbackEvent.ADD_FRIEND:
+      console.log('新好友', payload.friendInfo?.token, payload.qrCode);
+      break;
+  }
+  res.send('ok');
+});
+```
+
+`parseCallback` 接受字符串或已经解析过的对象，返回带类型的 `CallbackPayload`。
+
+## 配置
+
+```ts
+new PushPlusClient({
+  token: 'xxx',
+  secretKey: 'xxx',
+  baseUrl: 'https://www.pushplus.plus',
+  connectTimeoutMs: 10_000,
+  readTimeoutMs: 30_000,
+  accessKeyRefreshAheadSeconds: 300,
+  logRequest: false,
+  rateLimitGuardEnabled: true,
+  rateLimitCooldownMs: 0,             // 0 表示「次日 0 点」自动解禁
+  userAgent: 'my-app/1.0',
+  httpRequester: undefined,           // 自定义 HTTP 客户端（可选）
+});
+```
+
+| 字段 | 默认 | 说明 |
+| --- | --- | --- |
+| `token` | – | 用户 token / 消息 token，发送消息使用 |
+| `secretKey` | – | 用户 secretKey，调用开放接口使用 |
+| `baseUrl` | `https://www.pushplus.plus` | 服务地址 |
+| `connectTimeoutMs` | `10000` | 连接超时（毫秒） |
+| `readTimeoutMs` | `30000` | 请求/读超时（毫秒） |
+| `accessKeyRefreshAheadSeconds` | `300` | AccessKey 提前刷新秒数 |
+| `logRequest` | `false` | 开启 DEBUG 级请求/响应日志（写到 `console.debug`） |
+| `rateLimitGuardEnabled` | `true` | 是否启用本地限流守卫 |
+| `rateLimitCooldownMs` | `0` | 命中 `code=900` 后的本地禁推时长（毫秒）；`0` 表示到「次日 0 点」 |
+| `userAgent` | `perk-pushplus-sdk-js/<v>` | UA 头（仅 Node.js 生效，浏览器禁止设置） |
+| `httpRequester` | 内置 fetch 实现 | 自定义 HTTP 客户端 |
+
+## 错误处理
+
+所有错误都会包装成 `PushPlusError`：
+
+```ts
+import { ErrorCode, PushPlusError } from 'perk-pushplus-sdk';
+
+try {
+  await client.sendSimple('t', 'c');
+} catch (e) {
+  if (e instanceof PushPlusError) {
+    if (e.isRateLimited()) {
+      console.warn('PushPlus 限流，今天暂停推送：', e.message);
+      return;
+    }
+    switch (e.errorCode) {
+      case ErrorCode.INVALID_TOKEN:
+        console.error('token 错误，立即排查配置'); break;
+      case ErrorCode.NOT_VERIFIED:
+        console.error('账号未实名认证'); break;
+      case ErrorCode.INSUFFICIENT_POINTS:
+        console.warn('积分不足'); break;
+      default:
+        console.warn(`PushPlus 失败: code=${e.code}, msg=${e.message}`);
+    }
+  }
+}
+```
+
+`ErrorCode` 已经把官方文档的全部业务码语义化（`OK / NOT_LOGIN / UNAUTHORIZED / IP_FORBIDDEN / SERVER_ERROR / DATA_ERROR / FORBIDDEN_VIEW / INSUFFICIENT_POINTS / RATE_LIMITED / INVALID_TOKEN / NOT_VERIFIED / VALIDATION_ERROR`）。
+
+参考：[PushPlus 接口返回码说明](https://www.pushplus.plus/doc/guide/code.html)。
+
+## 限流守卫（code=900 自动短路）
+
+PushPlus 在请求次数过多时会返回 `code=900`，官方文档明确建议「根据返回值判断当天是否让程序继续调用发送消息接口，否则会让账号进一步受限」。SDK 默认替你做这件事：
+
+- 任意一次 `client.send(...)` / `client.batchSend(...)` 命中 `code=900` 后，SDK 会按 token 维度记下「禁推至 X 时刻」。
+- 同 token 后续发送调用不再发起 HTTP，直接抛 `PushPlusError(code=900)`。
+- 默认禁推到**系统时区的次日 0 点**；通过 `rateLimitCooldownMs` 可改为固定时长（例如文档示例的 2 天）。
+- 仅作用于发送接口，开放接口不受影响。
+- 进程内单例，**不跨进程共享**——多实例部署时每个进程最多被命中一次。
+
+可观察 / 可干预：
+
+```ts
+const guard = client.rateLimitGuard;
+
+const until = guard.blockedUntilAt('user_token');  // null 表示未被限流；否则为本地解禁时间戳（毫秒）
+guard.clear('user_token');                         // 例如：人工确认服务端已解禁后立即放行
+```
+
+完全关闭这个行为（不推荐）：
+
+```ts
+new PushPlusClient({ token: 'xxx', rateLimitGuardEnabled: false });
+```
+
+## 自定义 HTTP 客户端
+
+`fetch` 不满足需求（如想用 axios / undici / got / 浏览器代理）时，实现 `HttpRequester` 接口即可：
+
+```ts
+import { HttpRequester, HttpResponse, PushPlusClient } from 'perk-pushplus-sdk';
+import axios from 'axios';
+
+class AxiosHttpRequester implements HttpRequester {
+  async execute({ method, url, headers, body }): Promise<HttpResponse> {
+    const resp = await axios.request({
+      method,
+      url,
+      headers,
+      data: body,
+      validateStatus: () => true,        // 自行处理状态码
+      transformResponse: r => r,         // 直接拿到字符串
+    });
+    return { statusCode: resp.status, body: resp.data };
+  }
+}
+
+const client = PushPlusClient.builder()
+  .token('xxx')
+  .httpRequester(new AxiosHttpRequester())
+  .build();
+```
+
+## 兼容性
+
+| 环境 | 要求 | 备注 |
+| --- | --- | --- |
+| Node.js | `>=18`（推荐） | 18+ 内置全局 `fetch` |
+| Node.js | `>=14` | 需自行注入 `HttpRequester` 或 `fetch` polyfill（如 `undici`） |
+| 浏览器 | 现代浏览器 | 使用原生 `fetch` + `AbortController`，注意 PushPlus 服务端 CORS 策略 |
+| TypeScript | `>=4.5` | 完整类型 |
+
+> ⚠️ **浏览器使用注意**：PushPlus 接口是否允许跨域取决于服务端响应头。如果生产环境无法直接从浏览器调用，请通过你自己的后端代理后再使用本 SDK。
+
+## 示例
+
+更多示例见 [`examples/`](./examples) 目录：
+
+- [`examples/send.mjs`](./examples/send.mjs) — Node.js 发送消息
+- [`examples/express-callback.mjs`](./examples/express-callback.mjs) — Express 接收回调
+- [`examples/browser.html`](./examples/browser.html) — 浏览器中通过 `<script>` 直接使用
+
+## License
+
+Apache License 2.0

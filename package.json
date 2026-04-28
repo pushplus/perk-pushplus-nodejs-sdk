@@ -1,0 +1,64 @@
+{
+  "name": "perk-pushplus-sdk",
+  "version": "1.0.0",
+  "description": "pushplus(推送加) 官方接口 JavaScript/TypeScript SDK，可在 Node.js 与浏览器中使用",
+  "keywords": [
+    "pushplus",
+    "推送加",
+    "push",
+    "notification",
+    "wechat",
+    "webhook",
+    "sdk",
+    "browser",
+    "nodejs",
+    "typescript"
+  ],
+  "homepage": "https://www.pushplus.plus",
+  "license": "Apache-2.0",
+  "author": "perk-net",
+  "type": "module",
+  "main": "./dist/index.cjs",
+  "module": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "browser": "./dist/index.global.js",
+  "unpkg": "./dist/index.global.js",
+  "jsdelivr": "./dist/index.global.js",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "browser": {
+        "import": "./dist/index.js",
+        "require": "./dist/index.cjs",
+        "default": "./dist/index.global.js"
+      },
+      "import": "./dist/index.js",
+      "require": "./dist/index.cjs",
+      "default": "./dist/index.cjs"
+    },
+    "./package.json": "./package.json"
+  },
+  "files": [
+    "dist",
+    "src",
+    "README.md",
+    "LICENSE"
+  ],
+  "engines": {
+    "node": ">=14"
+  },
+  "sideEffects": false,
+  "scripts": {
+    "build": "tsup",
+    "dev": "tsup --watch",
+    "clean": "rimraf dist",
+    "prepublishOnly": "npm run clean && npm run build",
+    "test": "node --test test/*.test.mjs"
+  },
+  "devDependencies": {
+    "@types/node": "^20.11.0",
+    "rimraf": "^5.0.5",
+    "tsup": "^8.0.1",
+    "typescript": "^5.3.3"
+  }
+}

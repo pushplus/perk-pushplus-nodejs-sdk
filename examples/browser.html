@@ -1,0 +1,73 @@
+<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="UTF-8" />
+    <title>perk-pushplus-sdk · 浏览器示例</title>
+    <meta name="viewport" content="width=device-width,initial-scale=1.0" />
+    <style>
+      body { font-family: -apple-system, BlinkMacSystemFont, 'PingFang SC', sans-serif; padding: 24px; max-width: 720px; margin: 0 auto; }
+      label { display: block; margin: 12px 0 4px; font-size: 14px; color: #555; }
+      input, textarea { width: 100%; padding: 8px; box-sizing: border-box; border: 1px solid #ddd; border-radius: 6px; font-size: 14px; }
+      textarea { min-height: 100px; }
+      button { margin-top: 16px; padding: 10px 20px; background: #1677ff; color: #fff; border: none; border-radius: 6px; font-size: 14px; cursor: pointer; }
+      button:disabled { opacity: 0.5; cursor: wait; }
+      pre { background: #f6f8fa; padding: 12px; border-radius: 6px; font-size: 12px; white-space: pre-wrap; word-break: break-all; }
+      h1 { font-size: 20px; }
+    </style>
+  </head>
+  <body>
+    <h1>perk-pushplus-sdk · 浏览器示例</h1>
+    <p>本示例直接通过 <code>&lt;script&gt;</code> 标签加载 SDK，全局变量名为 <code>PerkPushPlus</code>。</p>
+    <p>⚠️ <b>跨域提醒</b>：PushPlus 的 CORS 策略由其服务端决定。如果浏览器直接调用被拦截，请通过你自己的后端代理后再使用本 SDK。</p>
+
+    <label>用户 token</label>
+    <input id="token" placeholder="个人中心 -> 一对一推送 -> 用户 token" />
+
+    <label>标题</label>
+    <input id="title" value="来自浏览器的消息" />
+
+    <label>内容（HTML）</label>
+    <textarea id="content"><b>Hello PushPlus</b> from browser</textarea>
+
+    <button id="send">发送</button>
+
+    <h3>结果</h3>
+    <pre id="output">尚未发送</pre>
+
+    <!-- 发布后改用 unpkg / jsdelivr -->
+    <!-- <script src="https://unpkg.com/perk-pushplus-sdk/dist/index.global.js"></script> -->
+    <script src="../dist/index.global.js"></script>
+    <script>
+      const { PushPlusClient, Template, PushPlusError } = PerkPushPlus;
+
+      document.getElementById('send').addEventListener('click', async () => {
+        const token = document.getElementById('token').value.trim();
+        const title = document.getElementById('title').value;
+        const content = document.getElementById('content').value;
+        const out = document.getElementById('output');
+
+        if (!token) {
+          out.textContent = '请先填写 token';
+          return;
+        }
+        const btn = document.getElementById('send');
+        btn.disabled = true;
+        out.textContent = '发送中...';
+
+        try {
+          const client = new PushPlusClient({ token, logRequest: true });
+          const shortCode = await client.send({ title, content, template: Template.HTML });
+          out.textContent = '发送成功 shortCode = ' + shortCode;
+        } catch (e) {
+          if (e instanceof PushPlusError) {
+            out.textContent = '失败：code=' + e.code + ' msg=' + e.message;
+          } else {
+            out.textContent = '异常：' + (e && e.message || e);
+          }
+        } finally {
+          btn.disabled = false;
+        }
+      });
+    </script>
+  </body>
+</html>
