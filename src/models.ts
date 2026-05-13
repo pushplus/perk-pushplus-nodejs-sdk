@@ -578,3 +578,65 @@ export interface PreTestRequest {
   contentType?: number;
   message?: string;
 }
+
+/* ============================== 开放接口 - image ============================== */
+
+/**
+ * 图片服务 - 获取上传凭证响应。
+ *
+ * 对应文档「十二. 图片服务接口 / 1. 获取上传凭证」。
+ * 返回七牛云表单上传所需的 token 及上传域名、存储桶等信息。
+ */
+export interface ImageUploadToken {
+  /** 七牛云上传凭证。 */
+  uploadToken?: string;
+  /** 七牛云上传域名，例如 `https://upload.qiniup.com`。 */
+  uploadHost?: string;
+  /** 七牛云上传地址，一般等同于 `uploadHost + "/"`。 */
+  uploadUrl?: string;
+  /** 七牛云存储桶名称。 */
+  bucket?: string;
+  /** 凭证有效时间（秒）。 */
+  expiresIn?: number;
+}
+
+/**
+ * 图片服务 - 上传图片响应（由七牛云直接返回）。
+ *
+ * 注意：该响应不是 PushPlus 统一的 `{code, msg, data}` 结构，
+ * 判断成功使用 `errno === 0`。
+ */
+export interface ImageUploadResult {
+  /** 错误码；0 表示成功。 */
+  errno?: number;
+  /** 文件扩展名，例如 `.png`。 */
+  ext?: string;
+  /** 文件名。 */
+  fname?: string;
+  /** 文件大小（字节）。 */
+  fsize?: number;
+  /** 七牛云文件 hash。 */
+  hash?: string;
+  /** 对象存储中的路径 key。 */
+  key?: string;
+  /** MIME 类型，例如 `image/png`。 */
+  mimeType?: string;
+  /** 响应说明。 */
+  msg?: string;
+  /** 缩略图地址。 */
+  thumbnail?: string;
+  /** 图片访问地址。 */
+  url?: string;
+}
+
+/** 图片服务 - 图片列表项。 */
+export interface ImageItem {
+  /** 图片 id。 */
+  id?: number;
+  /** 图片地址。 */
+  imgUrl?: string;
+  /** 缩略图地址。 */
+  thumbnail?: string;
+  /** 创建时间。 */
+  createTime?: string;
+}

@@ -33,9 +33,12 @@ export { PushPlusError, PushPlusException } from './exception';
 export {
   type HttpRequester,
   type HttpRequestOptions,
+  type HttpRawBody,
+  type HttpRawRequestOptions,
   type HttpResponse,
   FetchHttpRequester,
   isSuccessfulHttpStatus,
+  callExecuteRaw,
 } from './http';
 export { RateLimitGuard } from './rate-limit';
 export { AccessKeyManager } from './access-key-manager';
@@ -89,6 +92,9 @@ export type {
   PreDetail,
   PreSaveRequest,
   PreTestRequest,
+  ImageUploadToken,
+  ImageUploadResult,
+  ImageItem,
 } from './models';
 
 export {
@@ -114,3 +120,8 @@ export { ChannelApi } from './api/channel-api';
 export { ClawBotApi } from './api/clawbot-api';
 export { SettingApi } from './api/setting-api';
 export { PreApi } from './api/pre-api';
+export {
+  ImageApi,
+  type ImageFileInput,
+  type ImageUploadOptions,
+} from './api/image-api';

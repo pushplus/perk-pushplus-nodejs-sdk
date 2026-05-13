@@ -5,6 +5,7 @@
 - **同时支持 Node.js 与浏览器**：Node.js 18+ 使用内置 `fetch`，浏览器使用原生 `fetch`，无运行时依赖。
 - **三种产物**：CommonJS (`.cjs`) + ESModule (`.js`) + 浏览器 IIFE (`.global.js`)，可通过 npm / `<script>` 直接加载。
 - **完整 TypeScript 类型**：所有请求 / 响应 / 枚举 / 回调全部带类型声明。
+- **全部开放接口**：用户、消息、消息 token、群组、群组用户、好友、webhook、渠道、ClawBot、功能设置、预处理、图片服务（含一键上传到 PushPlus 图床）。
 - **AccessKey 自动管理**：缓存 + 过期前自动刷新；`code=401` 自动刷新并重试一次。
 - **本地限流守卫**：命中 `code=900` 后按 token 短路同 token 后续发送，避免被服务端长期封禁。
 - **Builder 链式 API**：与 Java/Python SDK 风格保持一致。
@@ -163,7 +164,48 @@ await client.setting.changeOpenMessageType(0);
 
 // 预处理（仅会员）
 const out = await client.pre.test({ content: '...', message: 'hi' });
+
+// 图片服务（一行上传到 PushPlus 图床，30 天有效）
+import { readFile } from 'node:fs/promises';
+const bytes = await readFile('/tmp/logo.png');
+const uploaded = await client.image.uploadBytes(bytes, { fileName: 'logo.png' });
+console.log(uploaded.url);                       // 直接拿到可访问的图片 URL
+const imgs = await client.image.list({ current: 1, pageSize: 10 });
+await client.image.delete(imgs.list[0].id);
 ```
+
+### 图片服务
+
+PushPlus 基于七牛云提供图片图床（30 天有效，可主动删除）。SDK 把「获取上传凭证 → multipart 表单上传 → 解析 URL」封装成一步：
+
+```ts
+// Node.js：从文件读取
+import { readFile } from 'node:fs/promises';
+const bytes = await readFile('/tmp/a.png');
+const r = await client.image.uploadBytes(bytes, { fileName: 'a.png' });
+console.log(r.url);
+
+// 浏览器：input[type=file]
+const file = (document.querySelector('input[type=file]') as HTMLInputElement).files![0];
+await client.image.uploadBytes(file, { fileName: file.name, contentType: file.type });
+
+// 已上传图片列表
+const page = await client.image.list({ current: 1, pageSize: 10 });
+
+// 主动删除（未删除的图片默认 30 天后由系统自动清理）
+await client.image.delete(page.list![0].id!);
+```
+
+需要自己控制凭证的获取与上传过程时（如缓存 token、分布式上传），可拆开调用：
+
+```ts
+const token = await client.image.getUploadToken();
+const r = await client.image.upload(token, bytes, { fileName: 'a.png', contentType: 'image/png' });
+```
+
+> 上传图片的真正请求会按七牛云规范以 `multipart/form-data` 提交到 `uploadUrl`，**不会**携带 PushPlus 的 `access-key`；其余三个接口（获取凭证 / 列表 / 删除）走 PushPlus 开放接口，自动带上 `access-key`。
+>
+> 接受的二进制形态：`Uint8Array`（Node 中 `Buffer` 是其子类，可直接传）、`ArrayBuffer`、`Blob`/`File`（浏览器 + Node 18+）。
 
 ### 5. 回调解析
 

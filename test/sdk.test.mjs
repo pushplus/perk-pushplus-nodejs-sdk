@@ -190,6 +190,177 @@ test('OpenMessageApi.detailUrl 拼接 base URL', () => {
   assert.equal(client.openMessage.detailUrl('abc'), 'https://x.test/shortMessage/abc');
 });
 
+test('ImageApi.getUploadToken 携带 access-key 并返回七牛云信息', async () => {
+  const calls = [];
+  const fakeHttp = {
+    async execute({ method, url, headers, body }) {
+      calls.push({ method, url, headers: { ...headers }, body });
+      if (url.endsWith('/api/common/openApi/getAccessKey')) {
+        return {
+          statusCode: 200,
+          body: JSON.stringify({ code: 200, data: { accessKey: 'AK-1', expiresIn: 7200 } }),
+        };
+      }
+      if (url.endsWith('/api/open/userImage/uploadToken')) {
+        return {
+          statusCode: 200,
+          body: JSON.stringify({
+            code: 200,
+            msg: 'ok',
+            data: {
+              uploadToken: 'qiniu-token',
+              uploadHost: 'https://upload.qiniup.com',
+              uploadUrl: 'https://upload.qiniup.com/',
+              bucket: 'pushplus-img',
+              expiresIn: 600,
+            },
+          }),
+        };
+      }
+      throw new Error('unexpected url: ' + url);
+    },
+  };
+  const client = new PushPlusClient({ token: 't', secretKey: 's', httpRequester: fakeHttp });
+  const token = await client.image.getUploadToken();
+  assert.equal(token.uploadToken, 'qiniu-token');
+  assert.equal(token.uploadUrl, 'https://upload.qiniup.com/');
+  assert.equal(token.bucket, 'pushplus-img');
+  assert.equal(token.expiresIn, 600);
+
+  const tokenCall = calls.find((c) => c.url.includes('/userImage/uploadToken'));
+  assert.equal(tokenCall.headers['access-key'], 'AK-1');
+});
+
+test('ImageApi.uploadBytes 走 multipart 上传到七牛云，不带 access-key', async () => {
+  const calls = [];
+  const fakeHttp = {
+    async execute({ method, url, headers, body }) {
+      calls.push({ channel: 'execute', method, url, headers: { ...headers }, body });
+      if (url.endsWith('/api/common/openApi/getAccessKey')) {
+        return {
+          statusCode: 200,
+          body: JSON.stringify({ code: 200, data: { accessKey: 'AK', expiresIn: 7200 } }),
+        };
+      }
+      if (url.endsWith('/api/open/userImage/uploadToken')) {
+        return {
+          statusCode: 200,
+          body: JSON.stringify({
+            code: 200,
+            data: { uploadToken: 'qiniu-token', uploadUrl: 'https://upload.qiniup.com/' },
+          }),
+        };
+      }
+      throw new Error('unexpected url: ' + url);
+    },
+    async executeRaw({ method, url, headers, body }) {
+      calls.push({ channel: 'raw', method, url, headers: { ...headers }, body });
+      return {
+        statusCode: 200,
+        body: JSON.stringify({
+          errno: 0,
+          ext: '.png',
+          fname: 'a.png',
+          fsize: 3,
+          hash: 'H',
+          key: '1/H.png',
+          mimeType: 'image/png',
+          msg: 'ok',
+          thumbnail: 'https://pic.pushplus.plus/1/H.png@s',
+          url: 'https://pic.pushplus.plus/1/H.png@p',
+        }),
+      };
+    },
+  };
+
+  const client = new PushPlusClient({ token: 't', secretKey: 's', httpRequester: fakeHttp });
+  const result = await client.image.uploadBytes(new Uint8Array([1, 2, 3]), { fileName: 'a.png' });
+
+  assert.equal(result.errno, 0);
+  assert.equal(result.url, 'https://pic.pushplus.plus/1/H.png@p');
+
+  const uploadCall = calls.find((c) => c.channel === 'raw');
+  assert.ok(uploadCall, '上传应走 executeRaw 通道');
+  assert.equal(uploadCall.method, 'POST');
+  assert.ok(uploadCall.url.includes('upload.qiniup.com'));
+  assert.equal(uploadCall.headers['access-key'], undefined, '七牛云请求不应携带 access-key');
+  assert.ok(
+    uploadCall.headers['Content-Type'].startsWith('multipart/form-data; boundary='),
+    'Content-Type 应是 multipart/form-data',
+  );
+  assert.ok(uploadCall.body instanceof Uint8Array, 'body 应是 Uint8Array');
+  const decoded = new TextDecoder('utf-8').decode(uploadCall.body);
+  assert.ok(decoded.includes('name="token"'));
+  assert.ok(decoded.includes('qiniu-token'));
+  assert.ok(decoded.includes('filename="a.png"'));
+});
+
+test('ImageApi.upload 在七牛云返回 errno!=0 时抛 PushPlusError', async () => {
+  const fakeHttp = {
+    async execute({ url }) {
+      if (url.endsWith('/api/common/openApi/getAccessKey')) {
+        return { statusCode: 200, body: JSON.stringify({ code: 200, data: { accessKey: 'AK', expiresIn: 7200 } }) };
+      }
+      if (url.endsWith('/api/open/userImage/uploadToken')) {
+        return {
+          statusCode: 200,
+          body: JSON.stringify({
+            code: 200,
+            data: { uploadToken: 'qiniu-token', uploadUrl: 'https://upload.qiniup.com/' },
+          }),
+        };
+      }
+      throw new Error('unexpected ' + url);
+    },
+    async executeRaw() {
+      return { statusCode: 200, body: JSON.stringify({ errno: 401, msg: 'bad token' }) };
+    },
+  };
+  const client = new PushPlusClient({ token: 't', secretKey: 's', httpRequester: fakeHttp });
+  await assert.rejects(
+    client.image.uploadBytes(new Uint8Array([1]), { fileName: 'a.png' }),
+    (e) => e instanceof PushPlusError && e.code === 401 && /bad token/.test(e.message),
+  );
+});
+
+test('ImageApi.list / delete 走开放接口并携带 access-key', async () => {
+  const calls = [];
+  const fakeHttp = {
+    async execute({ method, url, headers }) {
+      calls.push({ method, url, headers: { ...headers } });
+      if (url.endsWith('/api/common/openApi/getAccessKey')) {
+        return { statusCode: 200, body: JSON.stringify({ code: 200, data: { accessKey: 'AK', expiresIn: 7200 } }) };
+      }
+      if (url.includes('/api/open/userImage/list')) {
+        return {
+          statusCode: 200,
+          body: JSON.stringify({
+            code: 200,
+            data: {
+              pageNum: 1, pageSize: 10, total: 1, pages: 1,
+              list: [{ id: 1, imgUrl: 'u', thumbnail: 't', createTime: '2026-05-09' }],
+            },
+          }),
+        };
+      }
+      if (url.includes('/api/open/userImage/delete')) {
+        return { statusCode: 200, body: JSON.stringify({ code: 200, msg: 'ok' }) };
+      }
+      throw new Error('unexpected: ' + url);
+    },
+  };
+  const client = new PushPlusClient({ token: 't', secretKey: 's', httpRequester: fakeHttp });
+  const page = await client.image.list({ current: 1, pageSize: 10 });
+  assert.equal(page.total, 1);
+  assert.equal(page.list[0].id, 1);
+
+  await client.image.delete(1);
+  const deleteCall = calls.find((c) => c.url.includes('/userImage/delete'));
+  assert.equal(deleteCall.method, 'DELETE');
+  assert.ok(deleteCall.url.includes('id=1'), 'delete 应通过 url 传 id');
+  assert.equal(deleteCall.headers['access-key'], 'AK');
+});
+
 test('AbstractApi.appendQuery 正确拼接 query', async () => {
   // 通过 webhook detail 接口验证
   const calls = [];

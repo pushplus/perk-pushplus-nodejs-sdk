@@ -3,6 +3,7 @@ import { AccessKeyApi } from './api/access-key-api';
 import { ChannelApi } from './api/channel-api';
 import { ClawBotApi } from './api/clawbot-api';
 import { FriendApi } from './api/friend-api';
+import { ImageApi } from './api/image-api';
 import { MessageApi } from './api/message-api';
 import { MessageTokenApi } from './api/message-token-api';
 import { OpenMessageApi } from './api/open-message-api';
@@ -65,6 +66,7 @@ export class PushPlusClient {
   readonly clawBot: ClawBotApi;
   readonly setting: SettingApi;
   readonly pre: PreApi;
+  readonly image: ImageApi;
 
   constructor(options: PushPlusClientOptions = {}) {
     this.config = resolveConfig(options);
@@ -86,6 +88,7 @@ export class PushPlusClient {
     this.clawBot = new ClawBotApi(this.config, this.httpRequester, this.accessKeyManager);
     this.setting = new SettingApi(this.config, this.httpRequester, this.accessKeyManager);
     this.pre = new PreApi(this.config, this.httpRequester, this.accessKeyManager);
+    this.image = new ImageApi(this.config, this.httpRequester, this.accessKeyManager);
   }
 
   /** 与 Java SDK 风格一致的 Builder 入口。 */
