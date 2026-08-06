@@ -56,6 +56,8 @@ export interface SendRequest {
   to?: string;
   /** 预处理编码（仅会员）。 */
   pre?: string;
+  /** push 表单编码；template 为 form 时必传。 */
+  pushId?: string;
 }
 
 export class SendRequestBuilder {
@@ -72,6 +74,7 @@ export class SendRequestBuilder {
   timestamp(v?: number): this { this.req.timestamp = v; return this; }
   to(v?: string): this { this.req.to = v; return this; }
   pre(v?: string): this { this.req.pre = v; return this; }
+  pushId(v?: string): this { this.req.pushId = v; return this; }
 
   build(): SendRequest {
     return { ...this.req };
@@ -104,6 +107,8 @@ export interface BatchSendRequest {
   timestamp?: number;
   to?: string;
   pre?: string;
+  /** push 表单编码；template 为 form 时必传。 */
+  pushId?: string;
 }
 
 /**
@@ -127,6 +132,7 @@ export class BatchSendRequestBuilder {
   timestamp(v?: number): this { this.req.timestamp = v; return this; }
   to(v?: string): this { this.req.to = v; return this; }
   pre(v?: string): this { this.req.pre = v; return this; }
+  pushId(v?: string): this { this.req.pushId = v; return this; }
 
   /** 追加一个 channel。 */
   channel(ch: Channel | string): this {

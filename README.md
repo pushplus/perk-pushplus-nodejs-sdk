@@ -86,6 +86,16 @@ await client.send({
   content: 'v1.0.0',
   template: Template.MARKDOWN,
 });
+
+// push 表单：template=form 时需传 pushId（表单编码）
+await client.send(
+  sendRequest()
+    .title('表单通知')
+    .content('您有新的表单待填写')
+    .template(Template.FORM)
+    .pushId('表单编码')
+    .build(),
+);
 ```
 
 ### 3. 多渠道发送

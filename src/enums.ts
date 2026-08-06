@@ -44,6 +44,8 @@ export enum Template {
   ROUTE = 'route',
   /** 支付成功通知模板。 */
   PAY = 'pay',
+  /** 表单格式模板；发送时需传 pushId（表单编码）。 */
+  FORM = 'form',
 }
 
 /**

@@ -48,6 +48,35 @@ test('SendRequestBuilder 产出可选字段', () => {
   });
 });
 
+test('SendRequestBuilder 支持 form 模板与 pushId', () => {
+  const req = sendRequest()
+    .title('表单通知')
+    .content('您有新的表单待填写')
+    .template(Template.FORM)
+    .pushId('ES6kgrgG')
+    .build();
+  assert.equal(Template.FORM, 'form');
+  assert.deepEqual(req, {
+    title: '表单通知',
+    content: '您有新的表单待填写',
+    template: 'form',
+    pushId: 'ES6kgrgG',
+  });
+});
+
+test('BatchSendRequestBuilder 支持 form 模板与 pushId', () => {
+  const req = batchSendRequest()
+    .title('t')
+    .content('c')
+    .template(Template.FORM)
+    .pushId('ES6kgrgG')
+    .channel(Channel.WECHAT).option('')
+    .build();
+  assert.equal(req.template, 'form');
+  assert.equal(req.pushId, 'ES6kgrgG');
+  assert.equal(req.channel, 'wechat');
+});
+
 test('BatchSendRequestBuilder 累积式 channel/option', () => {
   const req = batchSendRequest()
     .title('t').content('c')
