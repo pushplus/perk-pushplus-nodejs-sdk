@@ -56,7 +56,7 @@ export interface SendRequest {
   to?: string;
   /** 预处理编码（仅会员）。 */
   pre?: string;
-  /** push 表单编码；template 为 form 时必传。 */
+  /** push 编码；template 为 form/doc/excel 时必传。 */
   pushId?: string;
 }
 
@@ -107,7 +107,7 @@ export interface BatchSendRequest {
   timestamp?: number;
   to?: string;
   pre?: string;
-  /** push 表单编码；template 为 form 时必传。 */
+  /** push 编码；template 为 form/doc/excel 时必传。 */
   pushId?: string;
 }
 
@@ -239,6 +239,14 @@ export interface AccessKeyResult {
 
 /* ============================== 开放接口 - user ============================== */
 
+/** 会员信息。 */
+export interface VipInfo {
+  /** 是否会员；0-否，1-是。 */
+  isVip?: number;
+  /** 会员到期日。 */
+  lastDay?: string;
+}
+
 export interface UserInfo {
   openId?: string;
   unionId?: string;
@@ -251,6 +259,10 @@ export interface UserInfo {
   emailStatus?: number;
   birthday?: string;
   points?: number;
+  /** 会员信息。 */
+  vipInfo?: VipInfo;
+  /** 实名认证状态；0-未实名，1-已实名。 */
+  verifyStatus?: number;
 }
 
 export interface SendCount {

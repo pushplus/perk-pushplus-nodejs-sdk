@@ -56,6 +56,8 @@ test('SendRequestBuilder 支持 form 模板与 pushId', () => {
     .pushId('ES6kgrgG')
     .build();
   assert.equal(Template.FORM, 'form');
+  assert.equal(Template.DOC, 'doc');
+  assert.equal(Template.EXCEL, 'excel');
   assert.deepEqual(req, {
     title: '表单通知',
     content: '您有新的表单待填写',

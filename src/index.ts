@@ -58,6 +58,7 @@ export type {
   FriendInfo,
   AccessKeyResult,
   UserInfo,
+  VipInfo,
   SendCount,
   UserLimitTime,
   MessageItem,
