@@ -25,6 +25,10 @@ export {
   CallbackEvent,
   WebhookType,
   WebhookTypeDescription,
+  FormStatus,
+  FormStatusDescription,
+  SharePerm,
+  ShareLogin,
   ErrorCode,
   errorCodeFromValue,
   isRateLimitedCode,
@@ -96,6 +100,23 @@ export type {
   ImageUploadToken,
   ImageUploadResult,
   ImageItem,
+  FormListQuery,
+  FormCover,
+  FormTheme,
+  FormSettings,
+  FormItem,
+  FormListItem,
+  FormSaveRequest,
+  FormDetail,
+  FormPublishDiff,
+  FormPublishResult,
+  DocListQuery,
+  DocListItem,
+  DocVo,
+  DocContent,
+  ExcelVo,
+  ExcelContent,
+  ExcelWriteCellsRequest,
 } from './models';
 
 export {
@@ -126,3 +147,6 @@ export {
   type ImageFileInput,
   type ImageUploadOptions,
 } from './api/image-api';
+export { FormApi } from './api/form-api';
+export { DocApi } from './api/doc-api';
+export { ExcelApi } from './api/excel-api';

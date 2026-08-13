@@ -658,3 +658,185 @@ export interface ImageItem {
   /** 创建时间。 */
   createTime?: string;
 }
+
+/* ============================== 开放接口 - form（push 表单） ============================== */
+
+/** 我的表单分页查询。 */
+export interface FormListQuery {
+  /** 页码，从 1 开始。 */
+  pageNum?: number;
+  /** 每页条数。 */
+  pageSize?: number;
+  /** 按标题关键词搜索。 */
+  keyword?: string;
+  /** 表单状态：0草稿 / 1收集中 / 2已停止。 */
+  status?: number;
+}
+
+/** 表单封面页配置。 */
+export interface FormCover {
+  enabled?: boolean;
+  image?: string;
+  buttonText?: string;
+}
+
+/** 表单主题外观。 */
+export interface FormTheme {
+  primaryColor?: string;
+  backgroundColor?: string;
+  headerImage?: string;
+  backgroundImage?: string;
+  cover?: FormCover;
+}
+
+/** 表单收集 / 展示设置。 */
+export interface FormSettings {
+  endTime?: string | null;
+  maxResponses?: number | null;
+  oncePerUser?: boolean;
+  allowAnonymous?: boolean;
+  password?: string;
+  showQuestionNumber?: boolean;
+  onePerPage?: boolean;
+  showPrevButton?: boolean;
+  hideTitle?: boolean;
+  hideCopyright?: boolean;
+  hideAd?: boolean;
+  showOutline?: boolean;
+  thankText?: string;
+  redirectEnabled?: boolean;
+  redirectUrl?: string;
+  allowEdit?: boolean;
+}
+
+/**
+ * 表单题目。不同题型字段不同，除常用字段外可携带任意扩展属性。
+ *
+ * type 常用取值：input / textarea / radio / checkbox / select / number / date / rate 等。
+ */
+export interface FormItem {
+  id?: string;
+  type?: string;
+  alias?: string;
+  label?: string;
+  description?: string;
+  required?: boolean;
+  placeholder?: string;
+  options?: unknown[];
+  rows?: unknown[];
+  columns?: unknown[];
+  allowOther?: boolean;
+  [key: string]: unknown;
+}
+
+/** 表单列表项 / 创建、复制结果（不含题目明细）。 */
+export interface FormListItem {
+  id?: number;
+  formCode?: string;
+  fillUrl?: string;
+  title?: string;
+  description?: string;
+  status?: number;
+  responseCount?: number;
+  publishTime?: string;
+  createTime?: string;
+  updateTime?: string;
+}
+
+/** 保存表单设计请求。 */
+export interface FormSaveRequest {
+  id: number;
+  title: string;
+  description?: string;
+  items?: FormItem[];
+  theme?: FormTheme;
+  settings?: FormSettings;
+}
+
+/** 表单详情（含草稿题目、主题、设置）。 */
+export interface FormDetail extends FormListItem {
+  items?: FormItem[];
+  theme?: FormTheme;
+  settings?: FormSettings;
+  publishDirty?: boolean;
+}
+
+/** 草稿题目与发布快照差异。 */
+export interface FormPublishDiff {
+  dirty?: boolean;
+  breaking?: boolean;
+  responseCount?: number;
+  added?: string[];
+  removed?: string[];
+  typeChanged?: string[];
+  optionChanged?: string[];
+}
+
+/** 发布表单结果。 */
+export interface FormPublishResult {
+  id?: number;
+  formCode?: string;
+  fillUrl?: string;
+  title?: string;
+  status?: number;
+  previousStatus?: number;
+  publishDirty?: boolean;
+  publishTime?: string;
+}
+
+/* ============================== 开放接口 - doc / excel 共用查询 ============================== */
+
+/** 文档 / 表格分页查询。 */
+export interface DocListQuery {
+  pageNum?: number;
+  pageSize?: number;
+  keyword?: string;
+  /** true 时仅返回已开启分享的记录。 */
+  shareEnabled?: boolean;
+}
+
+/** 文档 / 表格列表项。 */
+export interface DocListItem {
+  docCode?: string;
+  shareUrl?: string;
+  title?: string;
+  sharePerm?: number;
+  shareLogin?: number;
+  perm?: number;
+  published?: boolean;
+  publishTime?: string;
+  createTime?: string;
+  updateTime?: string;
+}
+
+/** 文档信息（不含正文）。 */
+export interface DocVo extends DocListItem {
+  publishDirty?: boolean;
+}
+
+/** 文档内容（HTML 草稿）。 */
+export interface DocContent extends DocVo {
+  content?: string;
+}
+
+/** 表格信息（不含正文）。与文档结构相同，独立类型便于区分。 */
+export interface ExcelVo extends DocListItem {
+  publishDirty?: boolean;
+}
+
+/** 表格内容（整表 JSON 字符串草稿）。 */
+export interface ExcelContent extends ExcelVo {
+  /** 整表草稿 JSON 字符串。 */
+  content?: string;
+}
+
+/** 按区域写入单元格请求。 */
+export interface ExcelWriteCellsRequest {
+  docCode: string;
+  /** 工作表名称；不传则写入活动表 / 第一张表。 */
+  sheetName?: string;
+  /** 起始单元格，如 A1。 */
+  range: string;
+  /** 二维数组，外层为行、内层为列。 */
+  values: unknown[][];
+}

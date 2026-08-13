@@ -410,3 +410,87 @@ test('AbstractApi.appendQuery 正确拼接 query', async () => {
   assert.ok(detailCall);
   assert.ok(detailCall.includes('webhookId=123'));
 });
+
+function openHttp(handlers) {
+  const calls = [];
+  const fakeHttp = {
+    async execute({ method, url, headers, body }) {
+      calls.push({ method, url, headers: { ...headers }, body });
+      if (url.endsWith('/api/common/openApi/getAccessKey')) {
+        return { statusCode: 200, body: JSON.stringify({ code: 200, data: { accessKey: 'AK', expiresIn: 7200 } }) };
+      }
+      for (const h of handlers) {
+        if (url.includes(h.match)) {
+          return { statusCode: 200, body: JSON.stringify({ code: 200, msg: 'ok', data: h.data ?? {} }) };
+        }
+      }
+      throw new Error('unexpected url: ' + url);
+    },
+  };
+  return { calls, fakeHttp };
+}
+
+test('FormApi 创建、保存、发布走 /push/api/open/form', async () => {
+  const { calls, fakeHttp } = openHttp([
+    { match: '/push/api/open/form/create', data: { id: 10001, title: '用户满意度调查', status: 0 } },
+    { match: '/push/api/open/form/save', data: null },
+    { match: '/push/api/open/form/publish', data: { id: 10001, formCode: 'a1b2c3d4', fillUrl: 'https://www.pushplus.plus/push/form/a1b2c3d4', status: 1 } },
+  ]);
+  const client = new PushPlusClient({ token: 't', secretKey: 's', httpRequester: fakeHttp });
+  const created = await client.form.create('用户满意度调查');
+  assert.equal(created.id, 10001);
+  await client.form.save({ id: 10001, title: '用户满意度调查', items: [{ id: 'q1', type: 'input', label: '姓名' }] });
+  const published = await client.form.publish(10001);
+  assert.equal(published.formCode, 'a1b2c3d4');
+
+  assert.ok(calls.some((c) => c.url.includes('/push/api/open/form/create')));
+  const saveCall = calls.find((c) => c.url.includes('/push/api/open/form/save'));
+  assert.equal(saveCall.headers['access-key'], 'AK');
+  assert.ok(JSON.parse(saveCall.body).items[0].id === 'q1');
+  const publishCall = calls.find((c) => c.url.includes('/push/api/open/form/publish'));
+  assert.ok(publishCall.url.includes('id=10001'));
+  assert.equal(publishCall.method, 'POST');
+});
+
+test('DocApi 保存内容并发布', async () => {
+  const { calls, fakeHttp } = openHttp([
+    { match: '/push/api/open/doc/create', data: { docCode: 'Ab3xY7kP', title: '本周工作同步', sharePerm: 0 } },
+    { match: '/push/api/open/doc/saveContent', data: { docCode: 'Ab3xY7kP', publishDirty: true } },
+    { match: '/push/api/open/doc/publish', data: { docCode: 'Ab3xY7kP', published: true, publishDirty: false } },
+  ]);
+  const client = new PushPlusClient({ token: 't', secretKey: 's', httpRequester: fakeHttp });
+  const doc = await client.doc.create('本周工作同步');
+  assert.equal(doc.docCode, 'Ab3xY7kP');
+  await client.doc.saveContent(doc.docCode, '<p>hello</p>');
+  const published = await client.doc.publish(doc.docCode);
+  assert.equal(published.published, true);
+
+  const saveCall = calls.find((c) => c.url.includes('/push/api/open/doc/saveContent'));
+  assert.equal(JSON.parse(saveCall.body).content, '<p>hello</p>');
+  const publishCall = calls.find((c) => c.url.includes('/push/api/open/doc/publish'));
+  assert.ok(publishCall.url.includes('docCode=Ab3xY7kP'));
+});
+
+test('ExcelApi writeCells 与 saveContent 对象序列化', async () => {
+  const { calls, fakeHttp } = openHttp([
+    { match: '/push/api/open/excel/create', data: { docCode: 'Sh3xY7kP', title: '销售日报' } },
+    { match: '/push/api/open/excel/writeCells', data: { docCode: 'Sh3xY7kP', publishDirty: true } },
+    { match: '/push/api/open/excel/saveContent', data: { docCode: 'Sh3xY7kP', publishDirty: true } },
+  ]);
+  const client = new PushPlusClient({ token: 't', secretKey: 's', httpRequester: fakeHttp });
+  const sheet = await client.excel.create('销售日报');
+  await client.excel.writeCells(sheet.docCode, 'A2', [['2026-08-13', 12800]], 'Sheet1');
+  await client.excel.saveContent(sheet.docCode, { sheetOrder: ['sheet-1'], sheets: {} });
+
+  const writeCall = calls.find((c) => c.url.includes('/push/api/open/excel/writeCells'));
+  const writeBody = JSON.parse(writeCall.body);
+  assert.equal(writeBody.range, 'A2');
+  assert.equal(writeBody.sheetName, 'Sheet1');
+  assert.deepEqual(writeBody.values, [['2026-08-13', 12800]]);
+
+  const saveCall = calls.find((c) => c.url.includes('/push/api/open/excel/saveContent'));
+  const saved = JSON.parse(saveCall.body);
+  assert.equal(typeof saved.content, 'string');
+  assert.ok(saved.content.startsWith('{'));
+  assert.ok(JSON.parse(saved.content).sheetOrder.includes('sheet-1'));
+});

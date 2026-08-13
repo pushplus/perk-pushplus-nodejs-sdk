@@ -5,7 +5,7 @@
 - **同时支持 Node.js 与浏览器**：Node.js 18+ 使用内置 `fetch`，浏览器使用原生 `fetch`，无运行时依赖。
 - **三种产物**：CommonJS (`.cjs`) + ESModule (`.js`) + 浏览器 IIFE (`.global.js`)，可通过 npm / `<script>` 直接加载。
 - **完整 TypeScript 类型**：所有请求 / 响应 / 枚举 / 回调全部带类型声明。
-- **全部开放接口**：用户、消息、消息 token、群组、群组用户、好友、webhook、渠道、ClawBot、功能设置、预处理、图片服务（含一键上传到 PushPlus 图床）。
+- **全部开放接口**：用户、消息、消息 token、群组、群组用户、好友、webhook、渠道、ClawBot、功能设置、预处理、图片服务（含一键上传到 PushPlus 图床）、push 表单、push 文档、push 表格。
 - **AccessKey 自动管理**：缓存 + 过期前自动刷新；`code=401` 自动刷新并重试一次。
 - **本地限流守卫**：命中 `code=900` 后按 token 短路同 token 后续发送，避免被服务端长期封禁。
 - **Builder 链式 API**：与 Java/Python SDK 风格保持一致。
@@ -14,6 +14,9 @@
 > 接口文档：
 > - 消息接口：<https://www.pushplus.plus/doc/guide/api.html>
 > - 开放接口：<https://www.pushplus.plus/doc/guide/openApi.html>
+> - push 表单：<https://www.pushplus.plus/doc/ecosystem/form/>
+> - push 文档：<https://www.pushplus.plus/doc/ecosystem/doc/>
+> - push 表格：<https://www.pushplus.plus/doc/ecosystem/sheet/>
 
 ## 安装
 
@@ -182,6 +185,30 @@ const uploaded = await client.image.uploadBytes(bytes, { fileName: 'logo.png' })
 console.log(uploaded.url);                       // 直接拿到可访问的图片 URL
 const imgs = await client.image.list({ current: 1, pageSize: 10 });
 await client.image.delete(imgs.list[0].id);
+
+// push 表单
+const form = await client.form.create('用户满意度调查');
+await client.form.save({
+  id: form.id!,
+  title: '用户满意度调查',
+  items: [{ id: 'q_name', type: 'input', label: '您的姓名', required: true }],
+});
+const published = await client.form.publish(form.id!);
+console.log(published.fillUrl);
+
+// push 文档
+const doc = await client.doc.create('本周工作同步');
+await client.doc.saveContent(doc.docCode!, '<h1>本周工作同步</h1><p>需求评审。</p>');
+await client.doc.updateShare(doc.docCode!, 1, 0);
+await client.doc.publish(doc.docCode!);
+
+// push 表格
+const sheet = await client.excel.create('销售日报');
+await client.excel.writeCells(sheet.docCode!, 'A1', [
+  ['日期', '销售额'],
+  ['2026-08-13', 12800],
+], 'Sheet1');
+await client.excel.publish(sheet.docCode!);
 ```
 
 ### 图片服务

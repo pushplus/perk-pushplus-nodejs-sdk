@@ -2,6 +2,9 @@ import { AccessKeyManager } from './access-key-manager';
 import { AccessKeyApi } from './api/access-key-api';
 import { ChannelApi } from './api/channel-api';
 import { ClawBotApi } from './api/clawbot-api';
+import { DocApi } from './api/doc-api';
+import { ExcelApi } from './api/excel-api';
+import { FormApi } from './api/form-api';
 import { FriendApi } from './api/friend-api';
 import { ImageApi } from './api/image-api';
 import { MessageApi } from './api/message-api';
@@ -67,6 +70,9 @@ export class PushPlusClient {
   readonly setting: SettingApi;
   readonly pre: PreApi;
   readonly image: ImageApi;
+  readonly form: FormApi;
+  readonly doc: DocApi;
+  readonly excel: ExcelApi;
 
   constructor(options: PushPlusClientOptions = {}) {
     this.config = resolveConfig(options);
@@ -89,6 +95,9 @@ export class PushPlusClient {
     this.setting = new SettingApi(this.config, this.httpRequester, this.accessKeyManager);
     this.pre = new PreApi(this.config, this.httpRequester, this.accessKeyManager);
     this.image = new ImageApi(this.config, this.httpRequester, this.accessKeyManager);
+    this.form = new FormApi(this.config, this.httpRequester, this.accessKeyManager);
+    this.doc = new DocApi(this.config, this.httpRequester, this.accessKeyManager);
+    this.excel = new ExcelApi(this.config, this.httpRequester, this.accessKeyManager);
   }
 
   /** 与 Java SDK 风格一致的 Builder 入口。 */

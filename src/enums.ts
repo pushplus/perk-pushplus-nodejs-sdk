@@ -119,6 +119,43 @@ export const WebhookTypeDescription: Record<number, string> = {
 };
 
 /**
+ * push 表单状态。
+ *
+ * 0-草稿，1-收集中，2-已停止。
+ */
+export enum FormStatus {
+  DRAFT = 0,
+  COLLECTING = 1,
+  STOPPED = 2,
+}
+
+export const FormStatusDescription: Record<FormStatus, string> = {
+  [FormStatus.DRAFT]: '草稿',
+  [FormStatus.COLLECTING]: '收集中',
+  [FormStatus.STOPPED]: '已停止',
+};
+
+/**
+ * push 文档 / 表格分享权限。
+ *
+ * 0-关闭分享，1-开启分享（仅可查看）。
+ */
+export enum SharePerm {
+  CLOSED = 0,
+  VIEW = 1,
+}
+
+/**
+ * push 文档 / 表格打开分享页是否需要登录。
+ *
+ * 0-免登录，1-需登录。
+ */
+export enum ShareLogin {
+  ANONYMOUS = 0,
+  REQUIRED = 1,
+};
+
+/**
  * PushPlus 接口业务返回码语义。
  *
  * 对应官方文档「接口返回码说明」：https://www.pushplus.plus/doc/guide/code.html
