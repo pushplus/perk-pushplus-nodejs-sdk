@@ -2,6 +2,7 @@ import { AccessKeyManager } from '../access-key-manager';
 import { ResolvedPushPlusConfig } from '../config';
 import { PushPlusError } from '../exception';
 import { HttpRequester } from '../http';
+import { FileMultipart } from '../multipart';
 import { AbstractApi, isApiSuccess } from './base';
 
 /**
@@ -38,6 +39,45 @@ export abstract class OpenAbstractApi extends AbstractApi {
       this.accessKeyManager.invalidate();
       const retryHeaders = await this.headersWithAccessKey();
       const retry = await this.execute<T>(method, path, retryHeaders, body);
+      if (isApiSuccess(retry)) {
+        return retry.data as T;
+      }
+      throw new PushPlusError(
+        `PushPlus 开放接口业务失败(重试后): code=${retry.code}, msg=${retry.msg}`,
+        retry.code ?? -1,
+      );
+    }
+    throw new PushPlusError(
+      `PushPlus 开放接口业务失败: code=${resp.code}, msg=${resp.msg}`,
+      resp.code ?? -1,
+    );
+  }
+
+  /** 以 multipart 上传文件（自动携带 access-key；code=401 时刷新后重试一次）。 */
+  protected executeOpenMultipart<T>(path: string, multipart: FileMultipart): Promise<T> {
+    return this.executeOpenRaw<T>('POST', path, multipart.body, {
+      'Content-Type': multipart.contentType,
+    });
+  }
+
+  /**
+   * 执行带二进制 body 的开放接口请求；当返回 code=401 时自动刷新 key 并重试一次。
+   */
+  protected async executeOpenRaw<T>(
+    method: string,
+    path: string,
+    body: Uint8Array,
+    extraHeaders?: Record<string, string>,
+  ): Promise<T> {
+    const headers = { ...(await this.headersWithAccessKey()), ...(extraHeaders ?? {}) };
+    const resp = await this.executeRaw<T>(method, path, headers, body);
+    if (isApiSuccess(resp)) {
+      return resp.data as T;
+    }
+    if (resp.code === OpenAbstractApi.CODE_ACCESS_KEY_INVALID) {
+      this.accessKeyManager.invalidate();
+      const retryHeaders = { ...(await this.headersWithAccessKey()), ...(extraHeaders ?? {}) };
+      const retry = await this.executeRaw<T>(method, path, retryHeaders, body);
       if (isApiSuccess(retry)) {
         return retry.data as T;
       }

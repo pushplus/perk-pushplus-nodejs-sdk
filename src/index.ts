@@ -79,10 +79,12 @@ export type {
   TopicItem,
   TopicUserItem,
   TopicUserListQuery,
+  TopicUserBlacklistItem,
   WebhookItem,
   WebhookSaveRequest,
   FriendItem,
   FriendQrCode,
+  FriendBlacklistItem,
   ClawBotInfo,
   ClawBotMessage,
   ClawBotQrCode,
@@ -150,3 +152,4 @@ export {
 export { FormApi } from './api/form-api';
 export { DocApi } from './api/doc-api';
 export { ExcelApi } from './api/excel-api';
+export { type FileInput } from './multipart';

@@ -1,6 +1,7 @@
 import { AccessKeyManager } from '../access-key-manager';
 import { ResolvedPushPlusConfig } from '../config';
 import { HttpRequester } from '../http';
+import { FileInput, buildFileMultipart, toFileBytes } from '../multipart';
 import { DocContent, DocListItem, DocListQuery, DocVo, PageResult } from '../models';
 import { OpenAbstractApi } from './open-base';
 
@@ -9,6 +10,9 @@ import { OpenAbstractApi } from './open-base';
  *
  * 文档：https://www.pushplus.plus/doc/ecosystem/doc/
  * 基础路径：`/push/api/open/doc`
+ *
+ * 文档开放接口不单独提供推送接口。发布后请通过 `client.send` 推送分享页：
+ * `template=doc`，`pushId=docCode`。
  */
 export class DocApi extends OpenAbstractApi {
   constructor(config: ResolvedPushPlusConfig, http: HttpRequester, mgr: AccessKeyManager) {
@@ -27,6 +31,20 @@ export class DocApi extends OpenAbstractApi {
   /** 创建空白文档。 */
   create(title: string): Promise<DocVo> {
     return this.executeOpen<DocVo>('POST', '/push/api/open/doc/create', { title });
+  }
+
+  /**
+   * 导入 Word（.docx）创建文档。
+   *
+   * 标题默认取文件名；创建后默认关闭分享，需再调用 publish 才会同步到分享页。
+   */
+  async importWord(file: FileInput, fileName = 'document.docx'): Promise<DocVo> {
+    const bytes = await toFileBytes(file);
+    const name = fileName && fileName.trim() ? fileName : 'document.docx';
+    return this.executeOpenMultipart<DocVo>(
+      '/push/api/open/doc/import',
+      buildFileMultipart(name, guessDocxContentType(name), bytes),
+    );
   }
 
   /** 获取文档元信息与 HTML 草稿正文。 */
@@ -74,4 +92,10 @@ export class DocApi extends OpenAbstractApi {
     if (shareLogin != null) body.shareLogin = shareLogin;
     return this.executeOpen<DocVo>('POST', '/push/api/open/doc/updateShare', body);
   }
+}
+
+function guessDocxContentType(name: string): string {
+  return name.toLowerCase().endsWith('.docx')
+    ? 'application/vnd.openxmlformats-officedocument.wordprocessingml.document'
+    : 'application/octet-stream';
 }

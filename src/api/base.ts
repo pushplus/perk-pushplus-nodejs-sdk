@@ -1,6 +1,6 @@
 import { ResolvedPushPlusConfig } from '../config';
 import { PushPlusError } from '../exception';
-import { HttpRequester, HttpResponse, isSuccessfulHttpStatus } from '../http';
+import { HttpRequester, HttpResponse, callExecuteRaw, isSuccessfulHttpStatus } from '../http';
 import { ApiResponse } from '../models';
 
 /**
@@ -53,6 +53,32 @@ export abstract class AbstractApi {
     const url = this.resolveUrl(path);
     const json = body == null ? null : safeStringify(body);
     const resp = await this.http.execute({ method, url, headers: headers ?? undefined, body: json });
+    if (!isSuccessfulHttpStatus(resp.statusCode)) {
+      throw new PushPlusError(
+        `PushPlus 接口 HTTP 调用失败: status=${resp.statusCode}, body=${resp.body}`,
+        resp.statusCode,
+      );
+    }
+    return parseApiResponse<T>(resp);
+  }
+
+  /**
+   * 执行带二进制请求体的请求并返回原始 ApiResponse（不进行 code 校验）。
+   * 用于 multipart 上传等场景。
+   */
+  protected async executeRaw<T>(
+    method: string,
+    path: string,
+    headers: Record<string, string> | undefined | null,
+    body: Uint8Array,
+  ): Promise<ApiResponse<T>> {
+    const url = this.resolveUrl(path);
+    const resp = await callExecuteRaw(this.http, {
+      method,
+      url,
+      headers: headers ?? undefined,
+      body,
+    });
     if (!isSuccessfulHttpStatus(resp.statusCode)) {
       throw new PushPlusError(
         `PushPlus 接口 HTTP 调用失败: status=${resp.statusCode}, body=${resp.body}`,

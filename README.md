@@ -90,13 +90,29 @@ await client.send({
   template: Template.MARKDOWN,
 });
 
-// push 表单：template=form 时需传 pushId（表单编码）
+// push 表单 / 文档 / 表格：template 为 form/doc/excel 时需传 pushId（对应编码）
 await client.send(
   sendRequest()
     .title('表单通知')
     .content('您有新的表单待填写')
     .template(Template.FORM)
     .pushId('表单编码')
+    .build(),
+);
+await client.send(
+  sendRequest()
+    .title('本周工作同步')
+    .content('请查收')
+    .template(Template.DOC)
+    .pushId('文档编码')
+    .build(),
+);
+await client.send(
+  sendRequest()
+    .title('销售日报')
+    .content('请查收')
+    .template(Template.EXCEL)
+    .pushId('表格编码')
     .build(),
 );
 ```
@@ -151,10 +167,18 @@ const qr = await client.topic.qrCode(123, 86400, -1);
 
 // 群组用户
 await client.topicUser.editRemark(456, '老张');
+await client.topicUser.addBlacklist(10);
+const topicBlacklist = await client.topicUser.blacklistList({
+  current: 1,
+  pageSize: 20,
+  params: { topicId: 1 },
+});
 
 // 好友
 const myQr = await client.friend.getQrCode({ content: 'welcome' });
 const friends = await client.friend.list({ current: 1, pageSize: 20 });
+await client.friend.addBlacklist(friends.list[0].friendId);
+const friendBlacklist = await client.friend.blacklistList({ current: 1, pageSize: 20 });
 
 // webhook 渠道
 import { WebhookType } from '@perk-net/perk-pushplus-sdk';
@@ -195,20 +219,38 @@ await client.form.save({
 });
 const published = await client.form.publish(form.id!);
 console.log(published.fillUrl);
+await client.send({
+  title: published.title,
+  content: '请花1分钟完成填写',
+  template: Template.FORM,
+  pushId: published.formCode,
+});
 
 // push 文档
-const doc = await client.doc.create('本周工作同步');
-await client.doc.saveContent(doc.docCode!, '<h1>本周工作同步</h1><p>需求评审。</p>');
+import { readFile } from 'node:fs/promises';
+const doc = await client.doc.importWord(await readFile('本周工作同步.docx'), '本周工作同步.docx');
 await client.doc.updateShare(doc.docCode!, 1, 0);
 await client.doc.publish(doc.docCode!);
+await client.send({
+  title: doc.title,
+  content: '请查收',
+  template: Template.DOC,
+  pushId: doc.docCode,
+});
 
 // push 表格
-const sheet = await client.excel.create('销售日报');
+const sheet = await client.excel.importExcel(await readFile('销售日报.xlsx'), '销售日报.xlsx');
 await client.excel.writeCells(sheet.docCode!, 'A1', [
   ['日期', '销售额'],
   ['2026-08-13', 12800],
 ], 'Sheet1');
 await client.excel.publish(sheet.docCode!);
+await client.send({
+  title: sheet.title,
+  content: '请查收',
+  template: Template.EXCEL,
+  pushId: sheet.docCode,
+});
 ```
 
 ### 图片服务

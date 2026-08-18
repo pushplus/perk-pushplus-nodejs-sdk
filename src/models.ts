@@ -426,6 +426,19 @@ export interface TopicUserListQuery {
   params?: Record<string, unknown>;
 }
 
+/** 群组订阅人黑名单列表项。 */
+export interface TopicUserBlacklistItem {
+  /** 黑名单记录 ID；解除黑名单时使用。 */
+  id?: number;
+  /** 被拉黑用户 ID。 */
+  userId?: number;
+  nickName?: string;
+  openId?: string;
+  headImgUrl?: string;
+  /** 拉黑时间。 */
+  createTime?: string;
+}
+
 /* ============================== 开放接口 - webhook ============================== */
 
 export interface WebhookItem {
@@ -472,6 +485,18 @@ export interface FriendItem {
 
 export interface FriendQrCode {
   qrCodeImgUrl?: string;
+}
+
+/** 好友黑名单列表项。 */
+export interface FriendBlacklistItem {
+  /** 黑名单记录 ID；解除黑名单时使用。 */
+  id?: number;
+  /** 被拉黑好友 ID。 */
+  friendId?: number;
+  nickName?: string;
+  headImgUrl?: string;
+  /** 拉黑时间。 */
+  createTime?: string;
 }
 
 /* ============================== 开放接口 - clawbot ============================== */
@@ -661,16 +686,19 @@ export interface ImageItem {
 
 /* ============================== 开放接口 - form（push 表单） ============================== */
 
-/** 我的表单分页查询。 */
+/** 我的表单分页查询。官方结构为 `{current, pageSize, params:{keyword, status}}`。 */
 export interface FormListQuery {
-  /** 页码，从 1 开始。 */
-  pageNum?: number;
-  /** 每页条数。 */
+  /** 当前所在分页数，默认 1。 */
+  current?: number;
+  /** 每页大小，默认 20，最大 50。 */
   pageSize?: number;
-  /** 按标题关键词搜索。 */
-  keyword?: string;
-  /** 表单状态：0草稿 / 1收集中 / 2已停止。 */
-  status?: number;
+  params?: {
+    /** 按标题关键词搜索。 */
+    keyword?: string;
+    /** 表单状态：0草稿 / 1收集中 / 2已停止。 */
+    status?: number;
+    [key: string]: unknown;
+  };
 }
 
 /** 表单封面页配置。 */
@@ -786,13 +814,18 @@ export interface FormPublishResult {
 
 /* ============================== 开放接口 - doc / excel 共用查询 ============================== */
 
-/** 文档 / 表格分页查询。 */
+/** 文档 / 表格分页查询。官方结构为 `{current, pageSize, params:{keyword, shareEnabled}}`。 */
 export interface DocListQuery {
-  pageNum?: number;
+  /** 当前所在分页数，默认 1。 */
+  current?: number;
+  /** 每页大小，默认 20，最大 50。 */
   pageSize?: number;
-  keyword?: string;
-  /** true 时仅返回已开启分享的记录。 */
-  shareEnabled?: boolean;
+  params?: {
+    keyword?: string;
+    /** true 时仅返回已开启分享的记录。 */
+    shareEnabled?: boolean;
+    [key: string]: unknown;
+  };
 }
 
 /** 文档 / 表格列表项。 */

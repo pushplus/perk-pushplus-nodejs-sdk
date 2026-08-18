@@ -415,18 +415,25 @@ function openHttp(handlers) {
   const calls = [];
   const fakeHttp = {
     async execute({ method, url, headers, body }) {
-      calls.push({ method, url, headers: { ...headers }, body });
-      if (url.endsWith('/api/common/openApi/getAccessKey')) {
-        return { statusCode: 200, body: JSON.stringify({ code: 200, data: { accessKey: 'AK', expiresIn: 7200 } }) };
-      }
-      for (const h of handlers) {
-        if (url.includes(h.match)) {
-          return { statusCode: 200, body: JSON.stringify({ code: 200, msg: 'ok', data: h.data ?? {} }) };
-        }
-      }
-      throw new Error('unexpected url: ' + url);
+      calls.push({ channel: 'execute', method, url, headers: { ...headers }, body });
+      return respond(url);
+    },
+    async executeRaw({ method, url, headers, body }) {
+      calls.push({ channel: 'raw', method, url, headers: { ...headers }, body });
+      return respond(url);
     },
   };
+  function respond(url) {
+    if (url.endsWith('/api/common/openApi/getAccessKey')) {
+      return { statusCode: 200, body: JSON.stringify({ code: 200, data: { accessKey: 'AK', expiresIn: 7200 } }) };
+    }
+    for (const h of handlers) {
+      if (url.includes(h.match)) {
+        return { statusCode: 200, body: JSON.stringify({ code: 200, msg: 'ok', data: h.data ?? {} }) };
+      }
+    }
+    throw new Error('unexpected url: ' + url);
+  }
   return { calls, fakeHttp };
 }
 
@@ -494,3 +501,64 @@ test('ExcelApi writeCells 与 saveContent 对象序列化', async () => {
   assert.ok(saved.content.startsWith('{'));
   assert.ok(JSON.parse(saved.content).sheetOrder.includes('sheet-1'));
 });
+
+test('好友与群组订阅人黑名单接口', async () => {
+  const { calls, fakeHttp } = openHttp([
+    { match: '/api/open/friend/addBlacklist', data: null },
+    { match: '/api/open/friend/blacklistList', data: { pageNum: 1, pageSize: 20, total: 1, pages: 1, list: [{ id: 4, friendId: 1322, nickName: '昵称' }] } },
+    { match: '/api/open/friend/removeBlacklist', data: null },
+    { match: '/api/open/topicUser/addBlacklist', data: null },
+    { match: '/api/open/topicUser/blacklistList', data: { pageNum: 1, list: [{ id: 1, userId: 1322 }] } },
+    { match: '/api/open/topicUser/removeBlacklist', data: null },
+  ]);
+  const client = new PushPlusClient({ token: 't', secretKey: 's', httpRequester: fakeHttp });
+  await client.friend.addBlacklist(1322);
+  const friends = await client.friend.blacklistList({ current: 1, pageSize: 20 });
+  assert.equal(friends.list[0].friendId, 1322);
+  await client.friend.removeBlacklist(4);
+  await client.topicUser.addBlacklist(10);
+  const users = await client.topicUser.blacklistList({ current: 1, pageSize: 20, params: { topicId: 100 } });
+  assert.equal(users.list[0].id, 1);
+  await client.topicUser.removeBlacklist(1);
+
+  assert.ok(calls.some((c) => c.url.includes('/api/open/friend/addBlacklist') && c.url.includes('friendId=1322')));
+  const topicList = calls.find((c) => c.url.includes('/api/open/topicUser/blacklistList'));
+  assert.equal(JSON.parse(topicList.body).params.topicId, 100);
+});
+
+test('表单列表使用 current / params', async () => {
+  const { calls, fakeHttp } = openHttp([
+    { match: '/push/api/open/form/list', data: { pageNum: 1, pageSize: 20, total: 0, pages: 0, list: [] } },
+  ]);
+  const client = new PushPlusClient({ token: 't', secretKey: 's', httpRequester: fakeHttp });
+  await client.form.list({ current: 1, pageSize: 20, params: { keyword: '满意度', status: 1 } });
+  const listCall = calls.find((c) => c.url.includes('/push/api/open/form/list'));
+  const body = JSON.parse(listCall.body);
+  assert.equal(body.current, 1);
+  assert.equal(body.params.keyword, '满意度');
+  assert.equal(body.params.status, 1);
+});
+
+test('DocApi 导入 Word', async () => {
+  const { calls, fakeHttp } = openHttp([
+    { match: '/push/api/open/doc/import', data: { docCode: 'Ab3xY7kP', title: '本周工作同步' } },
+  ]);
+  const client = new PushPlusClient({ token: 't', secretKey: 's', httpRequester: fakeHttp });
+  const imported = await client.doc.importWord(new Uint8Array([1, 2, 3]), '本周工作同步.docx');
+  assert.equal(imported.docCode, 'Ab3xY7kP');
+
+  const importCall = calls.find((c) => c.url.includes('/push/api/open/doc/import'));
+  assert.equal(importCall.channel, 'raw');
+  assert.ok(importCall.headers['Content-Type'].startsWith('multipart/form-data; boundary='));
+});
+
+test('ExcelApi 导入', async () => {
+  const { calls, fakeHttp } = openHttp([
+    { match: '/push/api/open/excel/import', data: { docCode: 'Sh3xY7kP', title: '销售日报' } },
+  ]);
+  const client = new PushPlusClient({ token: 't', secretKey: 's', httpRequester: fakeHttp });
+  const imported = await client.excel.importExcel(new Uint8Array([9, 8, 7]), '销售日报.xlsx');
+  assert.equal(imported.docCode, 'Sh3xY7kP');
+  assert.ok(calls.some((c) => c.channel === 'raw' && c.url.includes('/push/api/open/excel/import')));
+});
+

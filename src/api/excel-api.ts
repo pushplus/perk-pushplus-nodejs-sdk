@@ -2,6 +2,7 @@ import { AccessKeyManager } from '../access-key-manager';
 import { ResolvedPushPlusConfig } from '../config';
 import { PushPlusError } from '../exception';
 import { HttpRequester } from '../http';
+import { FileInput, buildFileMultipart, toFileBytes } from '../multipart';
 import { DocListItem, DocListQuery, ExcelContent, ExcelVo, PageResult } from '../models';
 import { OpenAbstractApi } from './open-base';
 
@@ -10,6 +11,9 @@ import { OpenAbstractApi } from './open-base';
  *
  * 文档：https://www.pushplus.plus/doc/ecosystem/sheet/
  * 基础路径：`/push/api/open/excel`
+ *
+ * 表格开放接口不单独提供推送接口。发布后请通过 `client.send` 推送分享页：
+ * `template=excel`，`pushId=docCode`。
  */
 export class ExcelApi extends OpenAbstractApi {
   constructor(config: ResolvedPushPlusConfig, http: HttpRequester, mgr: AccessKeyManager) {
@@ -28,6 +32,20 @@ export class ExcelApi extends OpenAbstractApi {
   /** 创建空白表格。 */
   create(title: string): Promise<ExcelVo> {
     return this.executeOpen<ExcelVo>('POST', '/push/api/open/excel/create', { title });
+  }
+
+  /**
+   * 导入 Excel（.xlsx / .xls）创建表格。
+   *
+   * 标题默认取文件名；创建后默认关闭分享，需再调用 publish 才会同步到分享页。
+   */
+  async importExcel(file: FileInput, fileName = 'workbook.xlsx'): Promise<ExcelVo> {
+    const bytes = await toFileBytes(file);
+    const name = fileName && fileName.trim() ? fileName : 'workbook.xlsx';
+    return this.executeOpenMultipart<ExcelVo>(
+      '/push/api/open/excel/import',
+      buildFileMultipart(name, guessExcelContentType(name), bytes),
+    );
   }
 
   /** 获取表格元信息与整表 JSON 草稿。 */
@@ -111,4 +129,15 @@ function stringifyJsonContent(content: string | object): string {
   } catch (e) {
     throw new PushPlusError(`序列化表格内容失败: ${(e as Error).message}`, -1, { cause: e });
   }
+}
+
+function guessExcelContentType(name: string): string {
+  const lower = name.toLowerCase();
+  if (lower.endsWith('.xlsx')) {
+    return 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet';
+  }
+  if (lower.endsWith('.xls')) {
+    return 'application/vnd.ms-excel';
+  }
+  return 'application/octet-stream';
 }
