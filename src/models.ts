@@ -270,6 +270,7 @@ export interface SendCount {
   cpSendCount?: number;
   webhookSendCount?: number;
   mailSendCount?: number;
+  qqBotSendCount?: number;
 }
 
 export interface UserLimitTime {
@@ -516,6 +517,82 @@ export interface ClawBotMessage {
 export interface ClawBotQrCode {
   url?: string;
   qrcode?: string;
+}
+
+/* ============================== 开放接口 - QQ 机器人 ============================== */
+
+export interface QqBotBindLink {
+  /** 带参分享链接，用于生成扫码二维码；已绑定用户再次获取时可能为空。 */
+  url?: string;
+  /** 绑定码。已是好友时扫码收不到加好友事件，需私聊发送该码；认领 QQ 群也用此码。 */
+  bindCode?: string;
+  /** 有效期秒数，默认 300。 */
+  expireSeconds?: number;
+  /** 为当前用户分配的官方机器人 appId。 */
+  botAppId?: string;
+  botName?: string;
+  botAvatar?: string;
+}
+
+export interface QqBotInfo {
+  botId?: string;
+  username?: string;
+  avatar?: string;
+  appId?: string;
+  /** 官方分享链接，可用于拉机器人进群。 */
+  shareUrl?: string;
+}
+
+export interface QqBotBindInfo {
+  /** 0-未绑定，1-已绑定。 */
+  isBind?: number;
+  /** 1-可接收，0-用户已关闭单聊接收。 */
+  receiveStatus?: number;
+  createTime?: string;
+  botInfo?: QqBotInfo;
+}
+
+export interface QqGroupItem {
+  /** 群编号；新增渠道配置时作为 qqGroupId 使用。 */
+  id?: number;
+  groupOpenId?: string;
+  groupRemark?: string;
+  /** 1-在群，2-群消息接收关闭。 */
+  status?: number;
+  /** 群名称，接口未授权时为空。 */
+  groupName?: string;
+  groupFingerMemo?: string;
+  groupClassText?: string;
+  groupTags?: string[];
+  groupMemberNum?: number;
+  createTime?: string;
+}
+
+export interface QqBotItem {
+  id?: number;
+  qqName?: string;
+  /** 配置编码；发送消息时作为 option 传入。 */
+  qqCode?: string;
+  /** 2-发到 QQ 群。 */
+  sendType?: number;
+  qqGroupId?: number;
+  groupRemark?: string;
+  groupOpenId?: string;
+  groupName?: string;
+  updateTime?: string;
+}
+
+export interface QqBotSaveRequest {
+  /** 修改时必填。 */
+  id?: number;
+  /** 配置名称，必填，最多 64 个字符。 */
+  qqName?: string;
+  /** 配置编码，新增必填；仅支持字母、数字、下划线和中划线，创建后不可修改。 */
+  qqCode?: string;
+  /** 发送类型；留空时 SDK 自动填 2（发到 QQ 群）。 */
+  sendType?: number;
+  /** QQ 群编号，必填，取自 groupList 返回的 id。 */
+  qqGroupId?: number;
 }
 
 /* ============================== 开放接口 - channel ============================== */

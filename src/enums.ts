@@ -22,6 +22,8 @@ export enum Channel {
   APP = 'app',
   /** 微信 ClawBot。 */
   CLAWBOT = 'clawbot',
+  /** QQ 机器人；不带 option 发给自己，option 填配置编码则发到对应 QQ 群。 */
+  QQ = 'qq',
 }
 
 /**

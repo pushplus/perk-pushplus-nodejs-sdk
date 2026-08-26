@@ -5,7 +5,7 @@
 - **同时支持 Node.js 与浏览器**：Node.js 18+ 使用内置 `fetch`，浏览器使用原生 `fetch`，无运行时依赖。
 - **三种产物**：CommonJS (`.cjs`) + ESModule (`.js`) + 浏览器 IIFE (`.global.js`)，可通过 npm / `<script>` 直接加载。
 - **完整 TypeScript 类型**：所有请求 / 响应 / 枚举 / 回调全部带类型声明。
-- **全部开放接口**：用户、消息、消息 token、群组、群组用户、好友、webhook、渠道、ClawBot、功能设置、预处理、图片服务（含一键上传到 PushPlus 图床）、push 表单、push 文档、push 表格。
+- **全部开放接口**：用户、消息、消息 token、群组、群组用户、好友、webhook、渠道、ClawBot、QQ 机器人、功能设置、预处理、图片服务（含一键上传到 PushPlus 图床）、push 表单、push 文档、push 表格。
 - **AccessKey 自动管理**：缓存 + 过期前自动刷新；`code=401` 自动刷新并重试一次。
 - **本地限流守卫**：命中 `code=900` 后按 token 短路同 token 后续发送，避免被服务端长期封禁。
 - **Builder 链式 API**：与 Java/Python SDK 风格保持一致。
@@ -194,6 +194,19 @@ const mps = await client.channel.mpList();
 
 // ClawBot
 const botQr = await client.clawBot.getBotQrcode();
+
+// QQ 机器人：绑定 -> 认领群 -> 建配置 -> 发到群
+const link = await client.qqBot.getBindLink();   // link.url 生成二维码，或私聊发送 link.bindCode
+const bind = await client.qqBot.botInfo();       // bind.isBind === 1 表示已绑定
+const qqGroups = await client.qqBot.groupList();
+await client.qqBot.add({ qqName: '运维告警群', qqCode: 'ops-group', qqGroupId: qqGroups[0].id });
+await client.send({
+  title: '服务告警',
+  content: '订单服务响应超时',
+  channel: Channel.QQ,
+  option: 'ops-group', // 不传 option 则发给自己
+  template: Template.TXT,
+});
 
 // 设置
 await client.setting.changeIsSend(1); // 启用发送

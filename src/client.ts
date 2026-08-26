@@ -11,6 +11,7 @@ import { MessageApi } from './api/message-api';
 import { MessageTokenApi } from './api/message-token-api';
 import { OpenMessageApi } from './api/open-message-api';
 import { PreApi } from './api/pre-api';
+import { QqBotApi } from './api/qqbot-api';
 import { SettingApi } from './api/setting-api';
 import { TopicApi } from './api/topic-api';
 import { TopicUserApi } from './api/topic-user-api';
@@ -67,6 +68,7 @@ export class PushPlusClient {
   readonly webhook: WebhookApi;
   readonly channel: ChannelApi;
   readonly clawBot: ClawBotApi;
+  readonly qqBot: QqBotApi;
   readonly setting: SettingApi;
   readonly pre: PreApi;
   readonly image: ImageApi;
@@ -92,6 +94,7 @@ export class PushPlusClient {
     this.webhook = new WebhookApi(this.config, this.httpRequester, this.accessKeyManager);
     this.channel = new ChannelApi(this.config, this.httpRequester, this.accessKeyManager);
     this.clawBot = new ClawBotApi(this.config, this.httpRequester, this.accessKeyManager);
+    this.qqBot = new QqBotApi(this.config, this.httpRequester, this.accessKeyManager);
     this.setting = new SettingApi(this.config, this.httpRequester, this.accessKeyManager);
     this.pre = new PreApi(this.config, this.httpRequester, this.accessKeyManager);
     this.image = new ImageApi(this.config, this.httpRequester, this.accessKeyManager);

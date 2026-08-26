@@ -562,3 +562,39 @@ test('ExcelApi 导入', async () => {
   assert.ok(calls.some((c) => c.channel === 'raw' && c.url.includes('/push/api/open/excel/import')));
 });
 
+test('QqBotApi 绑定、查群与渠道配置', async () => {
+  const { calls, fakeHttp } = openHttp([
+    { match: '/api/open/qqBot/getBindLink', data: { url: 'https://qun.qq.com/qunpro/robot/share?robot_appid=1', bindCode: 'A1B2C3', expireSeconds: 300 } },
+    { match: '/api/open/qqBot/botInfo', data: { isBind: 1, receiveStatus: 1, botInfo: { appId: '1', username: 'pushplus' } } },
+    { match: '/api/open/qqBot/groupList', data: [{ id: 9, groupOpenId: 'OPEN-1', status: 1, groupName: '运维告警群' }] },
+    { match: '/api/open/qqBot/add', data: null },
+    { match: '/api/open/qqBot/list', data: { pageNum: 1, pageSize: 20, total: 1, pages: 1, list: [{ id: 3, qqName: '运维告警群', qqCode: 'ops-group', sendType: 2, qqGroupId: 9 }] } },
+    { match: '/api/open/qqBot/delete', data: null },
+  ]);
+  const client = new PushPlusClient({ token: 't', secretKey: 's', httpRequester: fakeHttp });
+
+  const link = await client.qqBot.getBindLink(true);
+  assert.equal(link.bindCode, 'A1B2C3');
+  assert.ok(calls.find((c) => c.url.includes('/api/open/qqBot/getBindLink')).url.includes('refresh=true'));
+
+  const bind = await client.qqBot.botInfo();
+  assert.equal(bind.isBind, 1);
+  assert.equal(bind.botInfo.username, 'pushplus');
+
+  const groups = await client.qqBot.groupList();
+  assert.equal(groups[0].id, 9);
+
+  await client.qqBot.add({ qqName: '运维告警群', qqCode: 'ops-group', qqGroupId: 9 });
+  const addCall = calls.find((c) => c.url.includes('/api/open/qqBot/add'));
+  assert.equal(addCall.headers['access-key'], 'AK');
+  assert.equal(JSON.parse(addCall.body).sendType, 2);
+
+  const page = await client.qqBot.list({ current: 1, pageSize: 20 });
+  assert.equal(page.list[0].qqCode, 'ops-group');
+
+  await client.qqBot.delete(3);
+  const delCall = calls.find((c) => c.url.includes('/api/open/qqBot/delete'));
+  assert.equal(delCall.method, 'DELETE');
+  assert.ok(delCall.url.includes('id=3'));
+});
+

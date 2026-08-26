@@ -88,6 +88,12 @@ export type {
   ClawBotInfo,
   ClawBotMessage,
   ClawBotQrCode,
+  QqBotBindLink,
+  QqBotBindInfo,
+  QqBotInfo,
+  QqBotItem,
+  QqBotSaveRequest,
+  QqGroupItem,
   MpItem,
   CpItem,
   MailItem,
@@ -142,6 +148,7 @@ export { FriendApi } from './api/friend-api';
 export { WebhookApi } from './api/webhook-api';
 export { ChannelApi } from './api/channel-api';
 export { ClawBotApi } from './api/clawbot-api';
+export { QqBotApi } from './api/qqbot-api';
 export { SettingApi } from './api/setting-api';
 export { PreApi } from './api/pre-api';
 export {
