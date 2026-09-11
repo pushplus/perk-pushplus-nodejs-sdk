@@ -5,7 +5,7 @@
 - **同时支持 Node.js 与浏览器**：Node.js 18+ 使用内置 `fetch`，浏览器使用原生 `fetch`，无运行时依赖。
 - **三种产物**：CommonJS (`.cjs`) + ESModule (`.js`) + 浏览器 IIFE (`.global.js`)，可通过 npm / `<script>` 直接加载。
 - **完整 TypeScript 类型**：所有请求 / 响应 / 枚举 / 回调全部带类型声明。
-- **全部开放接口**：用户、消息、消息 token、群组、群组用户、好友、webhook、渠道、ClawBot、QQ 机器人、功能设置、预处理、图片服务（含一键上传到 PushPlus 图床）、push 表单、push 文档、push 表格。
+- **全部开放接口**：用户、消息、消息 token、群组、群组用户、好友、webhook、渠道、ClawBot、QQ 机器人、功能设置、预处理、图片服务（含一键上传到 PushPlus 图床）、push 表单、push 文档、push 表格、消息规则。
 - **AccessKey 自动管理**：缓存 + 过期前自动刷新；`code=401` 自动刷新并重试一次。
 - **本地限流守卫**：命中 `code=900` 后按 token 短路同 token 后续发送，避免被服务端长期封禁。
 - **Builder 链式 API**：与 Java/Python SDK 风格保持一致。
@@ -214,6 +214,20 @@ await client.setting.changeOpenMessageType(0);
 
 // 预处理（仅会员）
 const out = await client.pre.test({ content: '...', message: 'hi' });
+
+// 消息规则（仅会员）
+await client.forwardRule.saveSetting(1); // 开启，未命中时仍按默认方式推送
+await client.forwardRule.add({
+  ruleName: '阿里云监控多渠道',
+  tokenId: -1,
+  sourceType: 1,
+  condition: { logic: 'and', items: [{ varName: 'alertState', operator: 'eq', value: 'ALERT' }] },
+  titleTemplate: '{{alertName}}',
+  variables: [{ varName: 'alertName', sourceType: 3, extractType: 1, extractKey: 'alertName' }],
+  targets: [{ channel: 'wechat', messageType: 'one' }],
+});
+const rules = await client.forwardRule.list({ current: 1, pageSize: 20 });
+const logs = await client.forwardLog.list({ current: 1, pageSize: 20, params: { matchResult: 1 } });
 
 // 图片服务（一行上传到 PushPlus 图床，30 天有效）
 import { readFile } from 'node:fs/promises';

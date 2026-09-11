@@ -5,6 +5,8 @@ import { ClawBotApi } from './api/clawbot-api';
 import { DocApi } from './api/doc-api';
 import { ExcelApi } from './api/excel-api';
 import { FormApi } from './api/form-api';
+import { ForwardLogApi } from './api/forward-log-api';
+import { ForwardRuleApi } from './api/forward-rule-api';
 import { FriendApi } from './api/friend-api';
 import { ImageApi } from './api/image-api';
 import { MessageApi } from './api/message-api';
@@ -75,6 +77,8 @@ export class PushPlusClient {
   readonly form: FormApi;
   readonly doc: DocApi;
   readonly excel: ExcelApi;
+  readonly forwardRule: ForwardRuleApi;
+  readonly forwardLog: ForwardLogApi;
 
   constructor(options: PushPlusClientOptions = {}) {
     this.config = resolveConfig(options);
@@ -101,6 +105,8 @@ export class PushPlusClient {
     this.form = new FormApi(this.config, this.httpRequester, this.accessKeyManager);
     this.doc = new DocApi(this.config, this.httpRequester, this.accessKeyManager);
     this.excel = new ExcelApi(this.config, this.httpRequester, this.accessKeyManager);
+    this.forwardRule = new ForwardRuleApi(this.config, this.httpRequester, this.accessKeyManager);
+    this.forwardLog = new ForwardLogApi(this.config, this.httpRequester, this.accessKeyManager);
   }
 
   /** 与 Java SDK 风格一致的 Builder 入口。 */

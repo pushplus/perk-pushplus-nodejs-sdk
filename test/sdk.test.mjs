@@ -598,3 +598,48 @@ test('QqBotApi 绑定、查群与渠道配置', async () => {
   assert.ok(delCall.url.includes('id=3'));
 });
 
+test('消息规则列表、测试、模式与触发记录', async () => {
+  const { calls, fakeHttp } = openHttp([
+    { match: '/api/open/forwardRule/list', data: { pageNum: 1, pageSize: 20, total: 1, pages: 1, list: [{ id: 1, ruleName: '阿里云监控多渠道', sourceType: 1 }] } },
+    { match: '/api/open/forwardRule/add', data: null },
+    { match: '/api/open/forwardRule/test', data: { matched: true, title: 'ECS-内存使用率', conditionExpr: "alertState == 'ALERT'" } },
+    { match: '/api/open/forwardRule/setting?mode=1', data: null },
+    { match: '/api/open/forwardRule/setting', data: { mode: 1 } },
+    { match: '/api/open/forwardLog/list', data: { pageNum: 1, list: [{ id: 9, ruleId: 1, matchResult: 1 }] } },
+    { match: '/api/open/forwardLog/detail', data: { id: 9, ruleId: 1, requestBody: '{"alertState":"ALERT"}' } },
+  ]);
+  const client = new PushPlusClient({ token: 't', secretKey: 's', httpRequester: fakeHttp });
+
+  const page = await client.forwardRule.list({ current: 1, pageSize: 20 });
+  assert.equal(page.list[0].ruleName, '阿里云监控多渠道');
+  await client.forwardRule.add({
+    ruleName: '阿里云监控多渠道',
+    tokenId: -1,
+    sourceType: 1,
+    variables: [{ varName: 'alertState', sourceType: 3, extractType: 1, extractKey: 'alertState' }],
+  });
+  const tested = await client.forwardRule.test({
+    sourceType: 1,
+    body: '{"alertState":"ALERT"}',
+    conditionExpr: "alertState == 'ALERT'",
+  });
+  assert.equal(tested.matched, true);
+  await client.forwardRule.saveSetting(1);
+  const setting = await client.forwardRule.getSetting();
+  assert.equal(setting.mode, 1);
+
+  const logs = await client.forwardLog.list({ current: 1, pageSize: 20, params: { ruleId: 1, matchResult: 1 } });
+  assert.equal(logs.list[0].id, 9);
+  const log = await client.forwardLog.detail(9);
+  assert.ok(log.requestBody.includes('ALERT'));
+
+  const addCall = calls.find((c) => c.url.includes('/api/open/forwardRule/add'));
+  assert.equal(JSON.parse(addCall.body).tokenId, -1);
+  const saveSetting = calls.find((c) => c.url.includes('/api/open/forwardRule/setting?mode=1'));
+  assert.equal(saveSetting.method, 'GET');
+  const listLogs = calls.find((c) => c.url.includes('/api/open/forwardLog/list'));
+  assert.equal(JSON.parse(listLogs.body).params.matchResult, 1);
+  const logDetail = calls.find((c) => c.url.includes('/api/open/forwardLog/detail'));
+  assert.ok(logDetail.url.includes('logId=9'));
+});
+

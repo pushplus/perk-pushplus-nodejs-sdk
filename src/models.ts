@@ -950,3 +950,218 @@ export interface ExcelWriteCellsRequest {
   /** 二维数组，外层为行、内层为列。 */
   values: unknown[][];
 }
+
+/* ============================== 开放接口 - 消息规则 ============================== */
+
+/** 图形化触发条件中的单条比较。 */
+export interface ForwardConditionItem {
+  /** 参与比较的变量名，模板变量或内置变量。 */
+  varName?: string;
+  /** 运算符，如 eq / contains / regex。 */
+  operator?: string;
+  /** 比较值；empty/notEmpty 时可为空；in/notIn 用逗号分隔。 */
+  value?: string;
+}
+
+/** 图形化触发条件。 */
+export interface ForwardCondition {
+  /** 条件连接方式；and-全部满足，or-任一满足。 */
+  logic?: string;
+  /** 条件列表；为空表示无条件命中。 */
+  items?: ForwardConditionItem[];
+}
+
+/** 模板变量。 */
+export interface ForwardVariable {
+  id?: number;
+  ruleId?: number;
+  /** 变量名，模板中用 `{{变量名}}` 引用。 */
+  varName?: string;
+  /** 变量来源；1-请求头，2-Query参数，3-请求体，4-URL路径，5-主题（邮件）。 */
+  sourceType?: number;
+  /** 提取方式；1-序列化数据，2-正则表达式，3-JSONPath，4-原始全文。 */
+  extractType?: number;
+  /** 键 / 正则 / JSONPath 表达式。 */
+  extractKey?: string;
+  /** 提取不到时的默认值。 */
+  defaultValue?: string;
+  /** 提取顺序。 */
+  sort?: number;
+}
+
+/** 发送目标。 */
+export interface ForwardTarget {
+  id?: number;
+  ruleId?: number;
+  /** 发送渠道；为空则用用户默认渠道。支持 `{{变量名}}`。 */
+  channel?: string;
+  /** 渠道配置编码，与 send 接口的 option 含义一致。 */
+  option?: string;
+  /** 消息类型；one / topic / friend。支持 `{{变量名}}`。 */
+  messageType?: string;
+  /** 群组编码，一对多时使用。 */
+  topic?: string;
+  /** 好友令牌，逗号分隔，好友消息时使用。 */
+  to?: string;
+  /** 发送顺序。 */
+  sort?: number;
+}
+
+/** 消息规则列表项。 */
+export interface ForwardRuleItem {
+  id?: number;
+  /** 绑定令牌；-1全部令牌，0用户令牌，大于0为消息令牌id。 */
+  tokenId?: number;
+  tokenName?: string;
+  ruleName?: string;
+  /** 触发来源；0-全部，1-消息接口，2-邮件。 */
+  sourceType?: number;
+  sourceTypeName?: string;
+  /** 状态；1-启用，0-停用。 */
+  status?: number;
+  /** 匹配顺序，越小越先匹配。 */
+  sort?: number;
+  conditionExpr?: string;
+  targetCount?: number;
+  createTime?: string;
+}
+
+/** 消息规则详情。 */
+export interface ForwardRuleDetail {
+  id?: number;
+  tokenId?: number;
+  ruleName?: string;
+  sourceType?: number;
+  status?: number;
+  sort?: number;
+  conditionExpr?: string;
+  condition?: ForwardCondition;
+  titleTemplate?: string;
+  contentTemplate?: string;
+  template?: string;
+  pre?: string;
+  /** 命中后是否不再匹配后续规则；1-是，0-否。 */
+  stopOnMatch?: number;
+  /** 频率限制周期，单位秒；0不限制。 */
+  limitPeriod?: number;
+  /** 频率限制周期内最大触发次数；0不限制。 */
+  limitCount?: number;
+  activeStartTime?: string;
+  activeEndTime?: string;
+  activeWeekdays?: string;
+  remark?: string;
+  variables?: ForwardVariable[];
+  targets?: ForwardTarget[];
+  createTime?: string;
+}
+
+/** 新增 / 修改消息规则请求。修改时 `id` 必填，会整体覆盖变量和发送目标。 */
+export interface ForwardRuleSaveRequest {
+  id?: number;
+  ruleName: string;
+  tokenId?: number;
+  sourceType?: number;
+  status?: number;
+  sort?: number;
+  condition?: ForwardCondition;
+  conditionExpr?: string;
+  titleTemplate?: string;
+  contentTemplate?: string;
+  template?: string;
+  pre?: string;
+  stopOnMatch?: number;
+  limitPeriod?: number;
+  limitCount?: number;
+  activeStartTime?: string;
+  activeEndTime?: string;
+  activeWeekdays?: string;
+  remark?: string;
+  variables?: ForwardVariable[];
+  targets?: ForwardTarget[];
+}
+
+/** 测试消息规则请求。不会真正发送消息。 */
+export interface ForwardRuleTestRequest {
+  /** 模拟来源；1-消息接口，2-邮件。 */
+  sourceType?: number;
+  contentType?: string;
+  headers?: Record<string, unknown>;
+  query?: Record<string, unknown>;
+  body?: string;
+  title?: string;
+  mailFrom?: string;
+  mailTo?: string;
+  mailCc?: string;
+  condition?: ForwardCondition;
+  conditionExpr?: string;
+  titleTemplate?: string;
+  contentTemplate?: string;
+  template?: string;
+  pre?: string;
+  variables?: ForwardVariable[];
+}
+
+/** 测试消息规则结果。 */
+export interface ForwardRuleTestResult {
+  /** 提取到的全部变量，含内置变量。 */
+  variables?: Record<string, unknown>;
+  matched?: boolean;
+  conditionExpr?: string;
+  errorMessage?: string;
+  title?: string;
+  content?: string;
+  template?: string;
+}
+
+/** 消息规则总开关。 */
+export interface ForwardRuleSetting {
+  /** 0-关闭，1-开启且未命中仍推送，2-开启且未命中不推送。 */
+  mode?: number;
+}
+
+/** 触发记录分页查询。官方结构为 `{current, pageSize, params:{ruleId, matchResult}}`。 */
+export interface ForwardLogListQuery {
+  current?: number;
+  pageSize?: number;
+  params?: {
+    ruleId?: number;
+    /** 匹配结果；0-条件不满足，1-已转发，2-频率限制，3-不在触发时间段，4-执行异常。 */
+    matchResult?: number;
+    [key: string]: unknown;
+  };
+}
+
+/** 触发记录列表项。 */
+export interface ForwardLogItem {
+  id?: number;
+  ruleId?: number;
+  ruleName?: string;
+  sourceType?: number;
+  sourceTypeName?: string;
+  requestIp?: string;
+  matchResult?: number;
+  matchResultName?: string;
+  shortCodes?: string;
+  errorMessage?: string;
+  createTime?: string;
+}
+
+/** 触发记录详情。 */
+export interface ForwardLogDetail {
+  id?: number;
+  ruleId?: number;
+  ruleName?: string;
+  sourceType?: number;
+  sourceTypeName?: string;
+  requestIp?: string;
+  requestMethod?: string;
+  requestHeaders?: string;
+  requestQuery?: string;
+  requestBody?: string;
+  variables?: string;
+  matchResult?: number;
+  matchResultName?: string;
+  shortCodes?: string;
+  errorMessage?: string;
+  createTime?: string;
+}

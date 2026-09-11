@@ -29,6 +29,18 @@ export {
   FormStatusDescription,
   SharePerm,
   ShareLogin,
+  ForwardMode,
+  ForwardModeDescription,
+  ForwardSourceType,
+  ForwardSourceTypeDescription,
+  ForwardVarSourceType,
+  ForwardVarSourceTypeDescription,
+  ForwardExtractType,
+  ForwardExtractTypeDescription,
+  ForwardMatchResult,
+  ForwardMatchResultDescription,
+  ForwardConditionOperator,
+  ForwardMessageType,
   ErrorCode,
   errorCodeFromValue,
   isRateLimitedCode,
@@ -125,6 +137,19 @@ export type {
   ExcelVo,
   ExcelContent,
   ExcelWriteCellsRequest,
+  ForwardConditionItem,
+  ForwardCondition,
+  ForwardVariable,
+  ForwardTarget,
+  ForwardRuleItem,
+  ForwardRuleDetail,
+  ForwardRuleSaveRequest,
+  ForwardRuleTestRequest,
+  ForwardRuleTestResult,
+  ForwardRuleSetting,
+  ForwardLogListQuery,
+  ForwardLogItem,
+  ForwardLogDetail,
 } from './models';
 
 export {
@@ -159,4 +184,6 @@ export {
 export { FormApi } from './api/form-api';
 export { DocApi } from './api/doc-api';
 export { ExcelApi } from './api/excel-api';
+export { ForwardRuleApi } from './api/forward-rule-api';
+export { ForwardLogApi } from './api/forward-log-api';
 export { type FileInput } from './multipart';

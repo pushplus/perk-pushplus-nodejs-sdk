@@ -158,6 +158,133 @@ export enum ShareLogin {
 };
 
 /**
+ * 消息规则总开关模式。
+ *
+ * 0-关闭（推送与原来一致），1-开启且未命中时仍按默认方式推送，2-开启且未命中时不推送。
+ */
+export enum ForwardMode {
+  OFF = 0,
+  ON_FALLBACK = 1,
+  ON_STRICT = 2,
+}
+
+export const ForwardModeDescription: Record<ForwardMode, string> = {
+  [ForwardMode.OFF]: '关闭（推送与原来一致）',
+  [ForwardMode.ON_FALLBACK]: '开启，未命中时仍按默认方式推送',
+  [ForwardMode.ON_STRICT]: '开启，未命中时不推送',
+};
+
+/**
+ * 消息规则触发来源。
+ *
+ * 0-全部，1-消息接口，2-邮件。
+ */
+export enum ForwardSourceType {
+  ALL = 0,
+  API = 1,
+  MAIL = 2,
+}
+
+export const ForwardSourceTypeDescription: Record<ForwardSourceType, string> = {
+  [ForwardSourceType.ALL]: '全部',
+  [ForwardSourceType.API]: '消息接口',
+  [ForwardSourceType.MAIL]: '邮件',
+};
+
+/**
+ * 模板变量来源。
+ *
+ * 1-请求头，2-Query参数，3-请求体，4-URL路径，5-主题（邮件）。
+ */
+export enum ForwardVarSourceType {
+  HEADER = 1,
+  QUERY = 2,
+  BODY = 3,
+  PATH = 4,
+  SUBJECT = 5,
+}
+
+export const ForwardVarSourceTypeDescription: Record<ForwardVarSourceType, string> = {
+  [ForwardVarSourceType.HEADER]: '请求头',
+  [ForwardVarSourceType.QUERY]: 'Query参数',
+  [ForwardVarSourceType.BODY]: '请求体',
+  [ForwardVarSourceType.PATH]: 'URL路径',
+  [ForwardVarSourceType.SUBJECT]: '主题（邮件）',
+};
+
+/**
+ * 模板变量提取方式。
+ *
+ * 1-序列化数据，2-正则表达式，3-JSONPath，4-原始全文。
+ */
+export enum ForwardExtractType {
+  SERIALIZED = 1,
+  REGEX = 2,
+  JSON_PATH = 3,
+  RAW = 4,
+}
+
+export const ForwardExtractTypeDescription: Record<ForwardExtractType, string> = {
+  [ForwardExtractType.SERIALIZED]: '序列化数据',
+  [ForwardExtractType.REGEX]: '正则表达式',
+  [ForwardExtractType.JSON_PATH]: 'JSONPath',
+  [ForwardExtractType.RAW]: '原始全文',
+};
+
+/**
+ * 消息规则触发记录匹配结果。
+ *
+ * 0-条件不满足，1-已转发，2-频率限制，3-不在触发时间段，4-执行异常。
+ */
+export enum ForwardMatchResult {
+  NOT_MATCHED = 0,
+  FORWARDED = 1,
+  RATE_LIMITED = 2,
+  OUT_OF_TIME = 3,
+  ERROR = 4,
+}
+
+export const ForwardMatchResultDescription: Record<ForwardMatchResult, string> = {
+  [ForwardMatchResult.NOT_MATCHED]: '条件不满足',
+  [ForwardMatchResult.FORWARDED]: '已转发',
+  [ForwardMatchResult.RATE_LIMITED]: '频率限制',
+  [ForwardMatchResult.OUT_OF_TIME]: '不在触发时间段',
+  [ForwardMatchResult.ERROR]: '执行异常',
+};
+
+/**
+ * 图形化触发条件运算符。
+ */
+export enum ForwardConditionOperator {
+  EQ = 'eq',
+  NE = 'ne',
+  CONTAINS = 'contains',
+  NOT_CONTAINS = 'notContains',
+  STARTS_WITH = 'startsWith',
+  ENDS_WITH = 'endsWith',
+  REGEX = 'regex',
+  GT = 'gt',
+  GTE = 'gte',
+  LT = 'lt',
+  LTE = 'lte',
+  IN = 'in',
+  NOT_IN = 'notIn',
+  EMPTY = 'empty',
+  NOT_EMPTY = 'notEmpty',
+}
+
+/**
+ * 消息规则发送目标的消息类型。
+ *
+ * 也支持写成 `{{变量名}}`。
+ */
+export enum ForwardMessageType {
+  ONE = 'one',
+  TOPIC = 'topic',
+  FRIEND = 'friend',
+}
+
+/**
  * PushPlus 接口业务返回码语义。
  *
  * 对应官方文档「接口返回码说明」：https://www.pushplus.plus/doc/guide/code.html
