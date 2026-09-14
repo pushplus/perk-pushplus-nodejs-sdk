@@ -100,6 +100,8 @@ export type {
   ClawBotInfo,
   ClawBotMessage,
   ClawBotQrCode,
+  CmccBindRequest,
+  CmccInfo,
   QqBotBindLink,
   QqBotBindInfo,
   QqBotInfo,
@@ -173,6 +175,7 @@ export { FriendApi } from './api/friend-api';
 export { WebhookApi } from './api/webhook-api';
 export { ChannelApi } from './api/channel-api';
 export { ClawBotApi } from './api/clawbot-api';
+export { CmccApi } from './api/cmcc-api';
 export { QqBotApi } from './api/qqbot-api';
 export { SettingApi } from './api/setting-api';
 export { PreApi } from './api/pre-api';

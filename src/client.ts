@@ -2,6 +2,7 @@ import { AccessKeyManager } from './access-key-manager';
 import { AccessKeyApi } from './api/access-key-api';
 import { ChannelApi } from './api/channel-api';
 import { ClawBotApi } from './api/clawbot-api';
+import { CmccApi } from './api/cmcc-api';
 import { DocApi } from './api/doc-api';
 import { ExcelApi } from './api/excel-api';
 import { FormApi } from './api/form-api';
@@ -70,6 +71,7 @@ export class PushPlusClient {
   readonly webhook: WebhookApi;
   readonly channel: ChannelApi;
   readonly clawBot: ClawBotApi;
+  readonly cmcc: CmccApi;
   readonly qqBot: QqBotApi;
   readonly setting: SettingApi;
   readonly pre: PreApi;
@@ -98,6 +100,7 @@ export class PushPlusClient {
     this.webhook = new WebhookApi(this.config, this.httpRequester, this.accessKeyManager);
     this.channel = new ChannelApi(this.config, this.httpRequester, this.accessKeyManager);
     this.clawBot = new ClawBotApi(this.config, this.httpRequester, this.accessKeyManager);
+    this.cmcc = new CmccApi(this.config, this.httpRequester, this.accessKeyManager);
     this.qqBot = new QqBotApi(this.config, this.httpRequester, this.accessKeyManager);
     this.setting = new SettingApi(this.config, this.httpRequester, this.accessKeyManager);
     this.pre = new PreApi(this.config, this.httpRequester, this.accessKeyManager);

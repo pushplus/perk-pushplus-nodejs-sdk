@@ -519,6 +519,22 @@ export interface ClawBotQrCode {
   qrcode?: string;
 }
 
+/* ============================== 开放接口 - 新消息 ClawBot ============================== */
+
+export interface CmccBindRequest {
+  /** 中国移动新消息 Channel API Key，必须以 ak_ 或 app_ 开头。 */
+  apiKey: string;
+}
+
+export interface CmccInfo {
+  /** 是否已绑定；0-未绑定，1-已绑定。 */
+  bound?: number;
+  /** 脱敏后的 API Key。 */
+  apiKeyMasked?: string;
+  /** 绑定时间。 */
+  createTime?: string;
+}
+
 /* ============================== 开放接口 - QQ 机器人 ============================== */
 
 export interface QqBotBindLink {

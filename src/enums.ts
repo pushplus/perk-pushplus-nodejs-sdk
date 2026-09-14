@@ -22,6 +22,8 @@ export enum Channel {
   APP = 'app',
   /** 微信 ClawBot。 */
   CLAWBOT = 'clawbot',
+  /** 新消息 ClawBot（中国移动 5G 消息）；仅支持中国移动用户。 */
+  CMCC = 'cmcc',
   /** QQ 机器人；不带 option 发给自己，option 填配置编码则发到对应 QQ 群。 */
   QQ = 'qq',
 }

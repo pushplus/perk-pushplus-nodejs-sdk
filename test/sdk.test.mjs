@@ -562,6 +562,31 @@ test('ExcelApi 导入', async () => {
   assert.ok(calls.some((c) => c.channel === 'raw' && c.url.includes('/push/api/open/excel/import')));
 });
 
+test('CmccApi 绑定、状态与测试消息', async () => {
+  const { calls, fakeHttp } = openHttp([
+    { match: '/api/open/cmcc/bind', data: null },
+    { match: '/api/open/cmcc/info', data: { bound: 1, apiKeyMasked: 'ak_***xxx', createTime: '2026-09-14 10:20:00' } },
+    { match: '/api/open/cmcc/test', data: null },
+    { match: '/api/open/cmcc/unbind', data: null },
+  ]);
+  const client = new PushPlusClient({ token: 't', secretKey: 's', httpRequester: fakeHttp });
+
+  await client.cmcc.bind('ak_xxxxxxxxxxxxxxxx');
+  const bindCall = calls.find((c) => c.url.includes('/api/open/cmcc/bind'));
+  assert.equal(bindCall.headers['access-key'], 'AK');
+  assert.equal(JSON.parse(bindCall.body).apiKey, 'ak_xxxxxxxxxxxxxxxx');
+
+  const info = await client.cmcc.info();
+  assert.equal(info.bound, 1);
+  assert.equal(info.apiKeyMasked, 'ak_***xxx');
+
+  await client.cmcc.sendTest();
+  assert.ok(calls.some((c) => c.url.includes('/api/open/cmcc/test')));
+
+  await client.cmcc.unbind();
+  assert.ok(calls.some((c) => c.url.includes('/api/open/cmcc/unbind')));
+});
+
 test('QqBotApi 绑定、查群与渠道配置', async () => {
   const { calls, fakeHttp } = openHttp([
     { match: '/api/open/qqBot/getBindLink', data: { url: 'https://qun.qq.com/qunpro/robot/share?robot_appid=1', bindCode: 'A1B2C3', expireSeconds: 300 } },
