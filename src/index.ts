@@ -108,6 +108,9 @@ export type {
   QqBotItem,
   QqBotSaveRequest,
   QqGroupItem,
+  QqMyBot,
+  QqMyBotList,
+  QqCustomBotRequest,
   MpItem,
   CpItem,
   MailItem,
@@ -176,7 +179,7 @@ export { WebhookApi } from './api/webhook-api';
 export { ChannelApi } from './api/channel-api';
 export { ClawBotApi } from './api/clawbot-api';
 export { CmccApi } from './api/cmcc-api';
-export { QqBotApi } from './api/qqbot-api';
+export { QqBotApi, SEND_TYPE_SELF, SEND_TYPE_QQ_GROUP } from './api/qqbot-api';
 export { SettingApi } from './api/setting-api';
 export { PreApi } from './api/pre-api';
 export {

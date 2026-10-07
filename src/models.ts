@@ -544,19 +544,63 @@ export interface QqBotBindLink {
   bindCode?: string;
   /** 有效期秒数，默认 300。 */
   expireSeconds?: number;
-  /** 为当前用户分配的官方机器人 appId。 */
+  /** 要绑定的机器人 appId；未指定 botAppId 时为分配给当前用户的官方机器人。 */
   botAppId?: string;
   botName?: string;
   botAvatar?: string;
+  /** 1-官方机器人，2-自有机器人。 */
+  botType?: number;
 }
 
 export interface QqBotInfo {
   botId?: string;
   username?: string;
   avatar?: string;
-  appId?: string;
+  botAppId?: string;
   /** 官方分享链接，可用于拉机器人进群。 */
   shareUrl?: string;
+  /** 1-官方机器人，2-自有机器人。 */
+  botType?: number;
+}
+
+export interface QqMyBot {
+  botAppId?: string;
+  botId?: string;
+  username?: string;
+  avatar?: string;
+  /** 官方分享链接，可用于拉机器人进群。 */
+  shareUrl?: string;
+  /** 1-官方机器人，2-自有机器人。 */
+  botType?: number;
+  /** 0-未绑定，1-已绑定。 */
+  isBind?: number;
+  /** 1-可接收，0-用户已关闭单聊接收。 */
+  receiveStatus?: number;
+  /** 1-默认机器人；发送时不填 option 即用默认机器人发给自己。 */
+  isDefault?: number;
+  bindTime?: string;
+}
+
+export interface QqMyBotList {
+  /** 官方机器人在前，自有机器人在后。 */
+  bots?: QqMyBot[];
+  /** 已添加的自有机器人数。 */
+  customBotCount?: number;
+  /** 可添加的自有机器人上限。 */
+  customBotLimit?: number;
+  /** 需在 QQ 开放平台配置的回调地址。 */
+  webhookUrl?: string;
+  /** 需加入 QQ 开放平台 IP 白名单的服务器出口 IP。 */
+  serverIps?: string[];
+  /** 需在 QQ 开放平台订阅的事件。 */
+  events?: string[];
+}
+
+export interface QqCustomBotRequest {
+  /** QQ 开放平台 AppID，必填，最多 32 个字符。 */
+  botAppId: string;
+  /** QQ 开放平台 AppSecret，必填，最多 64 个字符。 */
+  appSecret: string;
 }
 
 export interface QqBotBindInfo {
@@ -589,12 +633,17 @@ export interface QqBotItem {
   qqName?: string;
   /** 配置编码；发送消息时作为 option 传入。 */
   qqCode?: string;
-  /** 2-发到 QQ 群。 */
+  /** 1-发给自己，2-发到 QQ 群。 */
   sendType?: number;
+  /** sendType=2 时返回。 */
   qqGroupId?: number;
   groupRemark?: string;
   groupOpenId?: string;
   groupName?: string;
+  /** 发送使用的机器人 appId。 */
+  botAppId?: string;
+  botName?: string;
+  botAvatar?: string;
   updateTime?: string;
 }
 
@@ -603,11 +652,13 @@ export interface QqBotSaveRequest {
   id?: number;
   /** 配置名称，必填，最多 64 个字符。 */
   qqName?: string;
-  /** 配置编码，新增必填；仅支持字母、数字、下划线和中划线，创建后不可修改。 */
+  /** 配置编码，必填（修改时传原值）；仅支持字母、数字、下划线和中划线，创建后不可修改。 */
   qqCode?: string;
-  /** 发送类型；留空时 SDK 自动填 2（发到 QQ 群）。 */
+  /** 发送类型：1-发给自己，2-发到 QQ 群；留空时 SDK 自动填 2。 */
   sendType?: number;
-  /** QQ 群编号，必填，取自 groupList 返回的 id。 */
+  /** 发送使用的机器人 appId；sendType=1 时必填，sendType=2 时可不填，以群所在机器人为准。 */
+  botAppId?: string;
+  /** QQ 群编号，sendType=2 时必填，取自 groupList 返回的 id。 */
   qqGroupId?: number;
 }
 

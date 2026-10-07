@@ -215,9 +215,20 @@ await client.send({
   title: '服务告警',
   content: '订单服务响应超时',
   channel: Channel.QQ,
-  option: 'ops-group', // 不传 option 则发给自己
+  option: 'ops-group', // 不传 option 则用默认机器人发给自己
   template: Template.TXT,
 });
+
+// QQ 自有机器人：校验凭证 -> 添加 -> 扫码绑定 -> 设为默认 / 建“发给自己”配置
+// import { SEND_TYPE_SELF } from '@perk-net/perk-pushplus-sdk';
+const credential = { botAppId: '102xxxxxx', appSecret: 'xxxx' };
+const preview = await client.qqBot.previewCustomBot(credential); // 返回机器人昵称头像，不保存
+await client.qqBot.addCustomBot(credential);
+const myBots = await client.qqBot.myBots();                      // 回调地址、IP 白名单、需订阅事件也在这里
+const customLink = await client.qqBot.getBindLink(false, '102xxxxxx');
+const customBind = await client.qqBot.botInfo('102xxxxxx');
+await client.qqBot.setDefault('102xxxxxx');                      // 不传 option 时改用该机器人
+await client.qqBot.add({ qqName: '自有机器人私聊', qqCode: 'my-bot-self', sendType: SEND_TYPE_SELF, botAppId: '102xxxxxx' });
 
 // 设置
 await client.setting.changeIsSend(1); // 启用发送

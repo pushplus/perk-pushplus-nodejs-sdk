@@ -16,6 +16,7 @@ import {
   parseCallback,
   sendRequest,
   batchSendRequest,
+  SEND_TYPE_SELF,
 } from '../dist/index.js';
 
 test('resolveConfig 应用默认值', () => {
@@ -590,7 +591,7 @@ test('CmccApi 绑定、状态与测试消息', async () => {
 test('QqBotApi 绑定、查群与渠道配置', async () => {
   const { calls, fakeHttp } = openHttp([
     { match: '/api/open/qqBot/getBindLink', data: { url: 'https://qun.qq.com/qunpro/robot/share?robot_appid=1', bindCode: 'A1B2C3', expireSeconds: 300 } },
-    { match: '/api/open/qqBot/botInfo', data: { isBind: 1, receiveStatus: 1, botInfo: { appId: '1', username: 'pushplus' } } },
+    { match: '/api/open/qqBot/botInfo', data: { isBind: 1, receiveStatus: 1, botInfo: { botAppId: '1', username: 'pushplus' } } },
     { match: '/api/open/qqBot/groupList', data: [{ id: 9, groupOpenId: 'OPEN-1', status: 1, groupName: '运维告警群' }] },
     { match: '/api/open/qqBot/add', data: null },
     { match: '/api/open/qqBot/list', data: { pageNum: 1, pageSize: 20, total: 1, pages: 1, list: [{ id: 3, qqName: '运维告警群', qqCode: 'ops-group', sendType: 2, qqGroupId: 9 }] } },
@@ -621,6 +622,55 @@ test('QqBotApi 绑定、查群与渠道配置', async () => {
   const delCall = calls.find((c) => c.url.includes('/api/open/qqBot/delete'));
   assert.equal(delCall.method, 'DELETE');
   assert.ok(delCall.url.includes('id=3'));
+});
+
+test('QqBotApi 自有机器人与指定机器人', async () => {
+  const { calls, fakeHttp } = openHttp([
+    { match: '/api/open/qqBot/myBots', data: { bots: [{ botAppId: '1', botType: 1, isBind: 1, isDefault: 1 }, { botAppId: '102', botType: 2 }], customBotCount: 1, customBotLimit: 5 } },
+    { match: '/api/open/qqBot/customBot/preview', data: { botAppId: '102', username: 'my-bot', botType: 2 } },
+    { match: '/api/open/qqBot/customBot/add', data: null },
+    { match: '/api/open/qqBot/customBot/delete', data: null },
+    { match: '/api/open/qqBot/getBindLink', data: { bindCode: 'A1B2C3', botAppId: '102', botType: 2 } },
+    { match: '/api/open/qqBot/groupList', data: [] },
+    { match: '/api/open/qqBot/setDefault', data: null },
+    { match: '/api/open/qqBot/add', data: null },
+  ]);
+  const client = new PushPlusClient({ token: 't', secretKey: 's', httpRequester: fakeHttp });
+
+  const mine = await client.qqBot.myBots();
+  assert.equal(mine.bots.length, 2);
+  assert.equal(mine.bots[1].botType, 2);
+  assert.equal(mine.bots[1].botAppId, '102');
+  assert.equal(mine.customBotLimit, 5);
+
+  const credential = { botAppId: '102', appSecret: 'secret' };
+  const preview = await client.qqBot.previewCustomBot(credential);
+  assert.equal(preview.username, 'my-bot');
+  assert.equal(preview.botAppId, '102');
+  await client.qqBot.addCustomBot(credential);
+  assert.deepEqual(JSON.parse(calls.find((c) => c.url.includes('/api/open/qqBot/customBot/add')).body), { botAppId: '102', appSecret: 'secret' });
+
+  const link = await client.qqBot.getBindLink(false, '102');
+  assert.equal(link.botType, 2);
+  const linkUrl = calls.find((c) => c.url.includes('/api/open/qqBot/getBindLink')).url;
+  assert.ok(linkUrl.includes('botAppId=102'));
+  assert.ok(!linkUrl.includes('refresh'));
+
+  await client.qqBot.groupList('102');
+  assert.ok(calls.find((c) => c.url.includes('/api/open/qqBot/groupList')).url.includes('botAppId=102'));
+
+  await client.qqBot.setDefault('102');
+  assert.ok(calls.find((c) => c.url.includes('/api/open/qqBot/setDefault')).url.includes('botAppId=102'));
+
+  await client.qqBot.add({ qqName: '自有机器人私聊', qqCode: 'my-bot-self', sendType: SEND_TYPE_SELF, botAppId: '102' });
+  const addBody = JSON.parse(calls.find((c) => c.url.includes('/api/open/qqBot/add')).body);
+  assert.equal(addBody.sendType, 1);
+  assert.equal(addBody.botAppId, '102');
+
+  await client.qqBot.deleteCustomBot('102');
+  const delCall = calls.find((c) => c.url.includes('/api/open/qqBot/customBot/delete'));
+  assert.equal(delCall.method, 'DELETE');
+  assert.ok(delCall.url.includes('?botAppId=102'));
 });
 
 test('消息规则列表、测试、模式与触发记录', async () => {
